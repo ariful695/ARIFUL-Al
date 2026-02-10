@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#0b0f1a">
     <title>AI Studio Pro</title>
     
@@ -11,58 +11,94 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
-        .dark { background: #0b0f1a; color: white; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         
-        /* Glassmorphism UI */
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .message-user { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; border-radius: 20px 20px 4px 20px; }
-        .message-ai { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px 20px 20px 4px; }
-        
-        /* Mobile Specifics */
-        @media (max-width: 768px) {
-            #sidebar { position: fixed; left: -100%; transition: 0.3s ease-all; z-index: 100; width: 85%; height: 100%; }
-            #sidebar.active { left: 0; }
+        :root {
+            --bg: #ffffff; --text: #0f172a; --glass: rgba(15, 23, 42, 0.05);
+            --border: rgba(15, 23, 42, 0.1); --ai-bubble: #f1f5f9;
         }
+
+        .dark-mode {
+            --bg: #0b0f1a; --text: #ffffff; --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1); --ai-bubble: rgba(255, 255, 255, 0.05);
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); 
+            transition: background 0.3s ease; overflow: hidden; height: 100vh;
+        }
+
+        /* Sidebar & Overlay Logic */
+        #sidebar { 
+            position: fixed; left: -100%; top: 0; bottom: 0; width: 85%; max-width: 320px;
+            z-index: 9999; background: var(--bg); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+        }
+        #sidebar.active { left: 0; box-shadow: 20px 0 50px rgba(0,0,0,0.3); }
+
+        #overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: none; z-index: 9998;
+        }
+        #overlay.active { display: block; }
+
+        .glass { background: var(--glass); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+        .message-user { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; border-radius: 20px 20px 4px 20px; }
+        .message-ai { background: var(--ai-bubble); border: 1px solid var(--border); border-radius: 20px 20px 20px 4px; }
+        
+        header { padding-top: env(safe-area-inset-top); min-height: calc(75px + env(safe-area-inset-top)); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="dark overflow-hidden h-screen flex">
+<body class="dark-mode">
 
-    <aside id="sidebar" class="w-80 border-r border-white/10 flex flex-col glass">
-        <div class="p-6">
-            <div class="flex items-center gap-3 mb-8">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    <i class="ph-fill ph-cpu text-white text-xl"></i>
-                </div>
-                <h1 class="font-extrabold text-xl tracking-tight">STUDIO PRO</h1>
-            </div>
-            <button onclick="newChat()" class="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2">
-                <i class="ph ph-plus-circle"></i> New Session
+    <div id="overlay" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar">
+        <div class="p-6 mt-8 flex justify-between items-center">
+            <h1 class="font-extrabold text-xl tracking-tighter text-blue-500 italic">STUDIO PRO</h1>
+            <button onclick="toggleSidebar()" class="w-10 h-10 flex items-center justify-center bg-black/5 dark:bg-white/5 rounded-xl">
+                <i class="ph-bold ph-x text-xl"></i>
             </button>
         </div>
-        <div id="history" class="flex-1 overflow-y-auto px-4 space-y-2 no-scrollbar"></div>
+
+        <div class="px-6 pb-6">
+            <button onclick="newChat(); toggleSidebar();" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+                + New Conversation
+            </button>
+        </div>
+
+        <div id="history" class="flex-1 overflow-y-auto px-4 no-scrollbar space-y-2"></div>
+        
+        <div class="p-6 border-t border-black/5 dark:border-white/5">
+            <button onclick="toggleTheme()" class="w-full py-4 glass rounded-2xl flex items-center justify-center gap-3 font-bold text-[10px] uppercase tracking-widest">
+                <i id="theme-icon" class="ph-bold ph-sun text-lg"></i>
+                <span id="theme-text">Switch to Light</span>
+            </button>
+        </div>
     </aside>
 
-    <main class="flex-1 flex flex-col relative">
-        <header class="h-20 flex items-center px-6 border-b border-white/5 glass sticky top-0 z-50">
-            <button onclick="toggleSidebar()" class="md:hidden p-3 mr-4 bg-white/5 rounded-xl"><i class="ph ph-list-bold"></i></button>
+    <main class="flex-1 flex flex-col w-full h-full relative">
+        <header class="flex items-center px-4 glass sticky top-0 z-50">
+            <button onclick="toggleSidebar()" class="w-12 h-12 flex items-center justify-center bg-white/5 rounded-2xl mr-3 active:scale-90 transition-all">
+                <i class="ph-bold ph-list text-2xl"></i>
+            </button>
             <div class="flex-1">
                 <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span id="status-text" class="text-[10px] font-black uppercase tracking-widest text-white/40">Gemini 2.0 Active</span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                    <span id="status-text" class="text-[9px] font-black uppercase tracking-widest opacity-40">Stable Connection</span>
                 </div>
-                <h2 id="chat-title" class="font-bold text-sm truncate opacity-90">Universal AI Assistant</h2>
+                <h2 class="font-bold text-xs truncate">Multi-Model Racing Engine</h2>
             </div>
         </header>
 
-        <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-6 md:px-24 lg:px-48 no-scrollbar"></div>
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-6 md:px-24 no-scrollbar">
+            </div>
 
-        <footer class="p-6 md:px-24 lg:px-48 glass border-t border-white/5">
-            <div class="max-w-4xl mx-auto flex items-end gap-3 bg-white/5 p-2 rounded-[30px] border border-white/10 focus-within:border-blue-500 transition-all">
-                <textarea id="user-input" rows="1" placeholder="Ask anything..." class="flex-1 p-4 bg-transparent outline-none resize-none text-sm font-medium text-white"></textarea>
-                <button onclick="sendMsg()" class="p-4 bg-blue-600 text-white rounded-full shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
+        <footer class="p-4 glass border-t border-black/5 dark:border-white/5 pb-[calc(1rem + env(safe-area-inset-bottom))]">
+            <div class="max-w-4xl mx-auto flex items-end gap-2 bg-black/5 dark:bg-white/5 p-2 rounded-[25px] border border-black/10 dark:border-white/10">
+                <textarea id="user-input" rows="1" placeholder="Race the fastest AI..." class="flex-1 p-3 bg-transparent outline-none resize-none text-sm"></textarea>
+                <button onclick="sendMsg()" class="w-12 h-12 flex items-center justify-center bg-blue-600 text-white rounded-full shadow-lg shadow-blue-500/20 active:scale-90 transition-all">
                     <i class="ph-bold ph-paper-plane-right"></i>
                 </button>
             </div>
@@ -70,26 +106,17 @@
     </main>
 
     <script>
-        const KEYS = {
-            GEMINI: "AIzaSyBW_krs1ja_ytCy9BqTOc1OOYCB51ywYLU",
-            ROUTER: "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"
+        const KEYS = { 
+            GEMINI: "AIzaSyBW_krs1ja_ytCy9BqTOc1OOYCB51ywYLU", 
+            ROUTER: "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" 
         };
 
-        const MODEL_CHAIN = [
-            { id: "google/gemini-2.0-flash-exp:free", label: "Gemini 2.0", type: "google" },
-            { id: "nvidia/nemotron-3-nano-30b-a3b:free", label: "Nemotron-3", type: "router" },
-            { id: "meta-llama/llama-3.3-70b-instruct:free", label: "Llama 3.3", type: "router" },
-            { id: "openai/gpt-oss-120b:free", label: "GPT-OSS 120B", type: "router" },
-            { id: "deepseek/deepseek-r1:free", label: "DeepSeek R1", type: "router" }
-        ];
-
-        let state = {
-            currentChatId: Date.now(),
-            chats: JSON.parse(localStorage.getItem('studio_chats')) || [{ id: Date.now(), title: "First Chat", msgs: [] }]
+        let state = { 
+            currentChatId: Date.now(), 
+            chats: JSON.parse(localStorage.getItem('studio_chats')) || [{ id: Date.now(), title: "New Chat", msgs: [] }] 
         };
 
-        function updateStatus(txt) { document.getElementById('status-text').innerText = txt; }
-
+        // --- RACING ENGINE ---
         async function sendMsg() {
             const inp = document.getElementById('user-input');
             const txt = inp.value.trim();
@@ -97,26 +124,26 @@
 
             const chat = state.chats.find(c => c.id === state.currentChatId);
             chat.msgs.push({ role: 'user', content: txt });
-            inp.value = '';
-            render();
+            inp.value = ''; render();
 
-            chat.msgs.push({ role: 'assistant', content: '...' });
+            chat.msgs.push({ role: 'assistant', content: '⚡ *Racing models...*' });
             const aiIdx = chat.msgs.length - 1;
-            let success = false;
+            document.getElementById('status-text').innerText = "🚀 RACING ALL MODELS...";
 
-            for (const model of MODEL_CHAIN) {
-                updateStatus(`Linking to ${model.label}...`);
-                try {
-                    const res = await (model.type === "google" ? callGemini(txt) : callRouter(model.id, chat.msgs));
-                    if (res) {
-                        chat.msgs[aiIdx].content = res;
-                        updateStatus(`${model.label} Online`);
-                        success = true; break;
-                    }
-                } catch (e) { console.warn(`Model ${model.label} failed`); }
+            try {
+                // Firing all models at once - First one to return wins the slot!
+                const fastest = await Promise.any([
+                    callGemini(txt),
+                    callRouter("meta-llama/llama-3.3-70b-instruct:free", chat.msgs),
+                    callRouter("openai/gpt-oss-120b:free", chat.msgs),
+                    callRouter("nvidia/nemotron-3-nano-30b-a3b:free", chat.msgs)
+                ]);
+                chat.msgs[aiIdx].content = fastest;
+                document.getElementById('status-text').innerText = "🏆 WINNER DELIVERED";
+            } catch (e) {
+                chat.msgs[aiIdx].content = "⚠️ Connection error. All models failed to respond.";
+                document.getElementById('status-text').innerText = "❌ RACE FAILED";
             }
-
-            if(!success) chat.msgs[aiIdx].content = "⚠️ Connection Error. All models are busy.";
             save(); render();
         }
 
@@ -125,8 +152,7 @@
                 method: "POST", headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ contents: [{ parts: [{ text: p }] }] })
             });
-            const d = await r.json();
-            return d.candidates[0].content.parts[0].text;
+            const d = await r.json(); return d.candidates[0].content.parts[0].text;
         }
 
         async function callRouter(m, msgs) {
@@ -134,8 +160,25 @@
                 method: "POST", headers: { "Authorization": `Bearer ${KEYS.ROUTER}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ model: m, messages: msgs.slice(0, -1) })
             });
-            const d = await r.json();
-            return d.choices[0].message.content;
+            const d = await r.json(); return d.choices[0].message.content;
+        }
+
+        // --- UI CORE ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('studio_theme', isDark ? 'dark' : 'light');
+            updateThemeUI(isDark);
+        }
+
+        function updateThemeUI(isDark) {
+            document.getElementById('theme-icon').className = isDark ? 'ph-bold ph-sun text-lg' : 'ph-bold ph-moon text-lg';
+            document.getElementById('theme-text').innerText = isDark ? 'Switch to Light' : 'Switch to Dark';
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#0b0f1a' : '#ffffff');
         }
 
         function render() {
@@ -143,8 +186,8 @@
             const chat = state.chats.find(c => c.id === state.currentChatId);
             box.innerHTML = chat.msgs.map(m => `
                 <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}">
-                    <div class="max-w-[90%] p-4 ${m.role === 'user' ? 'message-user' : 'message-ai'}">
-                        <div class="text-[13px] leading-relaxed">${marked.parse(m.content)}</div>
+                    <div class="max-w-[90%] p-4 ${m.role === 'user' ? 'message-user' : 'message-ai shadow-sm'}">
+                        <div class="text-[13px] leading-relaxed prose prose-sm dark:prose-invert">${marked.parse(m.content)}</div>
                     </div>
                 </div>`).join('');
             box.scrollTop = box.scrollHeight;
@@ -154,21 +197,27 @@
         function renderHistory() {
             const h = document.getElementById('history');
             h.innerHTML = state.chats.slice().reverse().map(c => `
-                <div onclick="state.currentChatId=${c.id};render();" class="p-4 rounded-2xl cursor-pointer ${state.currentChatId === c.id ? 'bg-blue-600/10 text-blue-400' : 'opacity-40'}">
-                    <p class="text-[10px] font-bold uppercase truncate">${c.title || 'New Chat'}</p>
+                <div onclick="state.currentChatId=${c.id}; render(); toggleSidebar();" 
+                     class="p-4 rounded-2xl cursor-pointer transition-all ${state.currentChatId === c.id ? 'bg-blue-600/10 text-blue-500 border border-blue-500/10' : 'opacity-50'}">
+                    <p class="text-[10px] font-bold uppercase truncate">${c.msgs[0]?.content.substring(0, 30) || 'New Conversation'}</p>
                 </div>`).join('');
         }
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); }
-        function newChat() { 
-            const id = Date.now(); 
-            state.chats.push({ id, title: "New Conversation", msgs: [] }); 
-            state.currentChatId = id; 
-            render(); 
+        function newChat() {
+            const id = Date.now();
+            state.chats.push({ id, title: "New Chat", msgs: [] });
+            state.currentChatId = id;
+            render();
         }
+
         function save() { localStorage.setItem('studio_chats', JSON.stringify(state.chats)); }
-        
+
+        // Boot
+        const isDark = (localStorage.getItem('studio_theme') || 'dark') === 'dark';
+        if(!isDark) document.body.classList.remove('dark-mode');
+        updateThemeUI(isDark);
         window.onload = render;
     </script>
 </body>
-</html>
+    </html>
+    
