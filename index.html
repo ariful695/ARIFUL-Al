@@ -3,164 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Chat - Community Edition</title>
+    <title>AI Studio | GPT-OSS-120B</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        body { overscroll-behavior-y: none; position: fixed; width: 100%; height: 100%; }
-        #app-root { display: flex; height: 100dvh; width: 100%; }
-        .messages-area { flex: 1; overflow-y: auto; }
-        .prose pre { background: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 0.5rem 0; }
-        #sidebar { transition: transform 0.3s ease; z-index: 50; }
-        @media (max-width: 768px) { #sidebar { position: absolute; transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
-        #loading-overlay { position: fixed; inset: 0; background: white; z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .dark #loading-overlay { background: #0f172a; color: white; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; overscroll-behavior: none; transition: background 0.3s; }
+        
+        /* Message Bubbles */
+        .user-bubble { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; border-radius: 1.25rem 1.25rem 0.2rem 1.25rem; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
+        .ai-bubble { background: #f3f4f6; border-radius: 1.25rem 1.25rem 1.25rem 0.2rem; border: 1px solid rgba(0,0,0,0.05); }
+        .dark .ai-bubble { background: #1e293b; color: #f1f5f9; border-color: rgba(255,255,255,0.05); }
+
+        /* Sidebar Sidebar */
+        #sidebar { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 50; width: 280px; }
+        @media (max-width: 768px) {
+            #sidebar { position: absolute; transform: translateX(-100%); height: 100%; width: 80%; }
+            #sidebar.open { transform: translateX(0); box-shadow: 20px 0 60px rgba(0,0,0,0.3); }
+        }
+
+        /* Prose Styling for AI responses */
+        .prose pre { background: #0f172a !important; padding: 1rem; border-radius: 0.75rem; overflow-x: auto; color: #e2e8f0; }
+        .prose code { color: #f472b6; font-weight: 600; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-slate-900 dark:text-slate-100">
+<body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
-    <div id="loading-overlay">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-    </div>
-
-    <div id="app-root" class="hidden">
-        <aside id="sidebar" class="w-72 bg-gray-100 dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 flex flex-col">
-            <div class="p-4 flex justify-between items-center">
-                <h1 class="font-bold text-lg">AI Assistant</h1>
-                <button onclick="toggleSidebar()" class="md:hidden"><i class="ph ph-x text-xl"></i></button>
+    <div id="app-root" class="flex h-screen w-full overflow-hidden">
+        <aside id="sidebar" class="bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+            <div class="p-6">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-500/30">
+                        <i class="ph-fill ph-cpu text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-sm tracking-tight leading-none">GPT-OSS</h1>
+                        <span class="text-[9px] text-blue-500 font-black uppercase tracking-widest">120B Edition</span>
+                    </div>
+                </div>
             </div>
-            <button onclick="createNewChat()" class="mx-4 mb-4 p-3 bg-blue-600 text-white rounded-xl shadow-sm hover:bg-blue-700 transition flex items-center justify-center gap-2">
-                <i class="ph ph-plus-bold"></i> New Chat
+            
+            <button onclick="createNewChat()" class="mx-4 p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-blue-500 transition-all flex items-center gap-3 font-semibold text-xs shadow-sm">
+                <i class="ph ph-plus-circle-bold text-blue-600 text-lg"></i> New Conversation
             </button>
-            <div id="chat-history-list" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
-            <div class="p-4 border-t border-gray-200 dark:border-slate-700 space-y-2">
-                <button onclick="toggleSettings()" class="w-full text-left p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 text-sm">
-                    <i class="ph ph-gear"></i> Settings
+
+            <div id="chat-history-list" class="flex-1 overflow-y-auto mt-6 px-4 space-y-2"></div>
+
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <button onclick="toggleDarkMode()" class="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition">
+                    <i id="theme-icon" class="ph ph-moon-bold"></i>
                 </button>
-                <button onclick="toggleDarkMode()" class="w-full text-left p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2 text-sm">
-                    <i id="theme-icon" class="ph ph-moon"></i> Appearance
-                </button>
+                <div class="text-[10px] opacity-30 font-bold">V 2.1 STABLE</div>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col relative bg-white dark:bg-slate-900">
-            <header class="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center gap-4">
-                <button onclick="toggleSidebar()"><i class="ph ph-list text-2xl"></i></button>
-                <div class="flex-1">
-                    <h2 id="current-chat-title" class="font-medium truncate">Welcome</h2>
-                    <div class="flex items-center gap-2">
-                        <span id="key-status-badge" class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Owner Key Active</span>
-                        <span id="current-model-display" class="text-[10px] text-gray-400 uppercase tracking-wider"></span>
-                    </div>
+        <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950 relative">
+            <header class="h-14 flex items-center px-4 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-950/50 backdrop-blur-xl sticky top-0 z-40">
+                <button onclick="toggleSidebar()" class="md:hidden p-2"><i class="ph ph-list-bold text-xl"></i></button>
+                <div class="flex-1 px-4 min-w-0">
+                    <h2 id="current-chat-title" class="font-bold text-xs truncate uppercase tracking-wider opacity-70">Conversation</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-bold opacity-50">GPT-120B ONLINE</span>
                 </div>
             </header>
 
-            <div id="messages-display" class="messages-area p-4 md:px-20 lg:px-40 space-y-6"></div>
+            <div id="messages-display" class="flex-1 overflow-y-auto p-4 space-y-8 md:px-24 lg:px-64 scroll-smooth">
+                </div>
 
-            <footer class="p-4 md:px-20 lg:px-40">
-                <div class="max-w-4xl mx-auto relative">
-                    <textarea id="user-input" rows="1" placeholder="Type a message..." class="w-full p-4 pr-12 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" onkeydown="handleKeydown(event)"></textarea>
-                    <button id="send-btn" onclick="sendMessage()" class="absolute right-2.5 bottom-2.5 p-2 bg-blue-600 text-white rounded-xl hover:scale-105 transition-transform disabled:opacity-50">
-                        <i class="ph ph-paper-plane-right-bold"></i>
+            <footer class="p-4 md:px-24 lg:px-64">
+                <div class="max-w-4xl mx-auto flex items-end gap-3 bg-slate-100 dark:bg-slate-900 p-2 rounded-2xl border-2 border-transparent focus-within:border-blue-500/50 transition-all">
+                    <textarea 
+                        id="user-input" 
+                        rows="1" 
+                        placeholder="Ask GPT-OSS-120B..." 
+                        class="flex-1 p-3 bg-transparent border-none outline-none resize-none text-sm font-medium"
+                        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                        onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();sendMessage();}"
+                    ></textarea>
+                    <button id="send-btn" onclick="sendMessage()" class="p-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition">
+                        <i class="ph-bold ph-paper-plane-right"></i>
                     </button>
                 </div>
             </footer>
         </main>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl border dark:border-slate-700">
-            <h3 class="text-xl font-bold mb-4">Settings</h3>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Your Personal API Key (Optional)</label>
-                    <input type="password" id="api-key-input" class="w-full p-2.5 rounded-lg border dark:bg-slate-900 dark:border-slate-700" placeholder="Defaults to Owner Key">
-                    <p class="text-[10px] mt-1 text-gray-500 italic">Leave empty to use the shared community key.</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-400 uppercase mb-1">AI Model</label>
-                    <input type="text" id="model-input" class="w-full p-2.5 rounded-lg border dark:bg-slate-900 dark:border-slate-700">
-                </div>
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-                <button onclick="toggleSettings()" class="px-4 py-2 text-sm font-medium">Close</button>
-                <button onclick="saveSettings()" class="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Save</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        /**
-         * SET YOUR OWNER KEY HERE
-         * Note: This key is visible to anyone who "Views Page Source"
-         */
-        const OWNER_API_KEY = "PASTE_YOUR_OPENROUTER_KEY_HERE";
+        // --- CONFIGURATION ---
+        const OWNER_API_KEY = "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";
+        const DEFAULT_MODEL = "openai/gpt-oss-120b:free";
 
         let state = {
-            userKey: localStorage.getItem('user_api_key') || '',
-            model: localStorage.getItem('ai_model') || 'google/gemini-2.0-flash-exp:free',
+            model: DEFAULT_MODEL, // Model is now hardcoded here
             chats: JSON.parse(localStorage.getItem('ai_chats')) || [],
             currentChatId: null,
             isDark: localStorage.getItem('ai_theme') === 'dark',
             isStreaming: false
         };
 
-        function getActiveKey() {
-            return state.userKey || OWNER_API_KEY;
-        }
+        // FORCE SYNC: Overwrite any old saved model with the new GPT-OSS ID
+        localStorage.setItem('ai_model', DEFAULT_MODEL);
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.onload = () => {
             initTheme();
             if (state.chats.length > 0) loadChat(state.chats[0].id);
             else createNewChat();
-            
-            document.getElementById('api-key-input').value = state.userKey;
-            document.getElementById('model-input').value = state.model;
-            updateStatusBadge();
-            
-            document.getElementById('loading-overlay').classList.add('hidden');
-            document.getElementById('app-root').classList.remove('hidden');
-        });
+            renderChatHistory();
+        };
 
         async function sendMessage() {
-            const inputEl = document.getElementById('user-input');
-            const text = inputEl.value.trim();
-            const activeKey = getActiveKey();
-
+            const input = document.getElementById('user-input');
+            const text = input.value.trim();
             if (!text || state.isStreaming) return;
-            if (!activeKey || activeKey === "PASTE_YOUR_OPENROUTER_KEY_HERE") {
-                alert("The Owner has not set an API key yet. Please add one in settings.");
-                return;
-            }
 
             const chat = state.chats.find(c => c.id === state.currentChatId);
             chat.messages.push({ role: 'user', content: text });
-            inputEl.value = '';
+            input.value = '';
+            input.style.height = 'auto';
             renderMessages();
 
             chat.messages.push({ role: 'assistant', content: '' });
-            const aiMsgIdx = chat.messages.length - 1;
+            const aiIdx = chat.messages.length - 1;
             state.isStreaming = true;
-            document.getElementById('send-btn').disabled = true;
+            document.getElementById('send-btn').style.opacity = "0.5";
 
             try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${activeKey}`,
-                        "Content-Type": "application/json"
+                    headers: { 
+                        "Authorization": `Bearer ${OWNER_API_KEY}`, 
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://aistudio.premium" 
                     },
-                    body: JSON.stringify({
-                        model: state.model,
-                        messages: chat.messages.slice(0, -1),
-                        stream: true
+                    body: JSON.stringify({ 
+                        model: state.model, 
+                        messages: chat.messages.slice(0, -1), 
+                        stream: true 
                     })
                 });
 
-                const reader = response.body.getReader();
+                const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let fullText = "";
 
@@ -168,46 +153,42 @@
                     const { done, value } = await reader.read();
                     if (done) break;
                     const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
-                    
+                    const lines = chunk.split('\n');
                     for (const line of lines) {
-                        if (line.includes('[DONE]')) break;
                         if (line.startsWith('data: ')) {
+                            const dataStr = line.slice(6).trim();
+                            if (dataStr === "[DONE]") break;
                             try {
-                                const data = JSON.parse(line.replace('data: ', ''));
-                                fullText += data.choices[0]?.delta?.content || "";
-                                chat.messages[aiMsgIdx].content = fullText;
-                                updateLastMessage(fullText);
+                                const json = JSON.parse(dataStr);
+                                fullText += json.choices[0]?.delta?.content || "";
+                                chat.messages[aiIdx].content = fullText;
+                                
+                                // Update only the last message for performance
+                                const lastBubble = document.getElementById('messages-display').lastElementChild.querySelector('.prose');
+                                if (lastBubble) lastBubble.innerHTML = marked.parse(fullText);
                             } catch (e) {}
                         }
                     }
                 }
-                if (chat.title === "New Conversation") chat.title = text.slice(0, 25) + "...";
+                if (chat.title === "New Conversation") chat.title = text.slice(0, 25);
             } catch (err) {
-                chat.messages[aiMsgIdx].content = "Connection Error. Check API Key or Internet.";
+                chat.messages[aiIdx].content = "⚠️ **System Error:** The GPT-OSS-120B model is currently unavailable or the API key limit was reached.";
+                renderMessages();
             } finally {
                 state.isStreaming = false;
-                document.getElementById('send-btn').disabled = false;
-                save();
-                renderChatHistory();
-                updateHeader();
+                document.getElementById('send-btn').style.opacity = "1";
+                save(); renderChatHistory();
             }
-        }
-
-        function updateLastMessage(content) {
-            const last = document.getElementById('messages-display').lastElementChild?.querySelector('.prose');
-            if (last) last.innerHTML = marked.parse(content);
-            const container = document.getElementById('messages-display');
-            container.scrollTop = container.scrollHeight;
         }
 
         function renderMessages() {
             const container = document.getElementById('messages-display');
             const chat = state.chats.find(c => c.id === state.currentChatId);
+            if (!chat) return;
             container.innerHTML = chat.messages.map(m => `
-                <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}">
-                    <div class="max-w-[85%] ${m.role === 'user' ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none px-4 py-2' : 'text-gray-800 dark:text-gray-100'}">
-                        <div class="prose dark:prose-invert max-w-none">${marked.parse(m.content || '...')}</div>
+                <div class="flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div class="max-w-[90%] md:max-w-[80%] p-4 ${m.role === 'user' ? 'user-bubble' : 'ai-bubble shadow-sm'}">
+                        <div class="prose dark:prose-invert text-sm leading-relaxed">${marked.parse(m.content || 'Thinking...')}</div>
                     </div>
                 </div>
             `).join('');
@@ -224,71 +205,33 @@
             state.currentChatId = id;
             renderMessages();
             renderChatHistory();
-            updateHeader();
+            const curr = state.chats.find(c => c.id === id);
+            document.getElementById('current-chat-title').innerText = curr ? curr.title : "Conversation";
             if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
         }
 
         function renderChatHistory() {
             const list = document.getElementById('chat-history-list');
             list.innerHTML = state.chats.slice().reverse().map(c => `
-                <div onclick="loadChat('${c.id}')" class="p-3 rounded-xl cursor-pointer flex justify-between group ${state.currentChatId === c.id ? 'bg-gray-200 dark:bg-slate-700' : 'hover:bg-gray-200/50'}">
-                    <span class="truncate text-sm">${c.title}</span>
-                    <i onclick="deleteChat(event, '${c.id}')" class="ph ph-trash opacity-0 group-hover:opacity-100 hover:text-red-500"></i>
+                <div onclick="loadChat('${c.id}')" class="p-3 text-[11px] font-bold uppercase tracking-tight rounded-xl cursor-pointer transition-all truncate flex items-center gap-3 ${state.currentChatId === c.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500'}">
+                    <i class="ph ph-chat-text"></i> ${c.title}
                 </div>
             `).join('');
         }
 
-        function deleteChat(e, id) {
-            e.stopPropagation();
-            state.chats = state.chats.filter(c => c.id !== id);
-            if (state.currentChatId === id) state.currentChatId = state.chats[0]?.id || null;
-            if (!state.currentChatId) createNewChat();
-            else { save(); renderChatHistory(); renderMessages(); updateHeader(); }
-        }
-
-        function updateHeader() {
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-            document.getElementById('current-chat-title').innerText = chat?.title || "AI Chat";
-            document.getElementById('current-model-display').innerText = state.model.split('/').pop();
-            updateStatusBadge();
-        }
-
-        function updateStatusBadge() {
-            const badge = document.getElementById('key-status-badge');
-            if (state.userKey) {
-                badge.innerText = "Using Personal Key";
-                badge.className = "text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-            } else {
-                badge.innerText = "Using Owner Credits";
-                badge.className = "text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-            }
-        }
-
-        function saveSettings() {
-            state.userKey = document.getElementById('api-key-input').value.trim();
-            state.model = document.getElementById('model-input').value.trim();
-            localStorage.setItem('user_api_key', state.userKey);
-            localStorage.setItem('ai_model', state.model);
-            updateHeader();
-            toggleSettings();
-        }
-
-        function handleKeydown(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
-        }
-
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-        function toggleSettings() { document.getElementById('settings-modal').classList.toggle('hidden'); }
         function save() { localStorage.setItem('ai_chats', JSON.stringify(state.chats)); }
-        function toggleDarkMode() { state.isDark = !state.isDark; initTheme(); }
+        
+        function toggleDarkMode() {
+            state.isDark = !state.isDark;
+            initTheme();
+        }
         function initTheme() {
             document.documentElement.classList.toggle('dark', state.isDark);
-            document.getElementById('theme-icon').className = state.isDark ? 'ph ph-sun' : 'ph ph-moon';
+            document.getElementById('theme-icon').className = state.isDark ? 'ph ph-sun-bold' : 'ph ph-moon-bold';
             localStorage.setItem('ai_theme', state.isDark ? 'dark' : 'light');
         }
     </script>
 </body>
-                </html>
-                            
+                                                                                                                   </html>
+                    
