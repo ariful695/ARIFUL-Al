@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>এআই পাসপোর্ট ফটো ও সিগনেচার স্টুডিও</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <style>
+        /* Custom Styling for Cropper Face and Grid Lines */
+        .cropper-view-box { outline: 2px solid #2563eb; outline-color: rgba(37, 99, 235, 0.75); }
+        .cropper-line, .cropper-point { background-color: #2563eb; }
+        
+        /* Modern Guide Overlay for Indian Passport Alignment */
+        .passport-overlay {
+            position: absolute; pointer-events: none;
+            border: 2px dashed rgba(234, 179, 8, 0.6);
+            border-radius: 50%; width: 55%; height: 60%;
+            top: 15%; left: 22.5%; display: none; z-index: 10;
+        }
+        .passport-overlay::after {
+            content: "চোখ ও মুখ এখানে মেলান"; position: absolute; bottom: -25px; left: 50%;
+            transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff;
+            font-size: 10px; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+        }
+        .show-overlay .passport-overlay { display: block; }
+        .dark { color-scheme: dark; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea {
+                position: absolute; left: 0; top: 0; width: 210mm; height: 297mm;
+                padding: 20mm; background: white; display: grid !important;
+                grid-template-columns: repeat(4, 35mm); gap: 10mm; align-content: start;
+            }
+            .print-photo { width: 35mm; height: 45mm; border: 1px solid #ddd; object-fit: cover; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased transition-colors duration-300">
+
+    <header class="bg-white dark:bg-slate-800 shadow-xs border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                🚀 PhotoTools Ultimate <span class="text-xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-full">v5.0 Complete</span>
+            </h1>
+            <div class="flex items-center gap-4">
+                <button id="themeToggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <div class="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl max-w-sm mx-auto mb-8 shadow-xs">
+            <button id="tabPhoto" class="flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs transition cursor-pointer">👤 পাসপোর্ট ফটো</button>
+            <button id="tabSign" class="flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">✍️ সিগনেচার ক্রপার</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="md:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 h-fit space-y-6">
+                
+                <div>
+                    <h2 class="text-lg font-semibold mb-3">১. ফাইল সোর্স নির্বাচন করুন</h2>
+                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-36 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative">
+                        <div class="flex flex-col items-center justify-center pt-4 pb-4 text-center px-2">
+                            <svg class="w-8 h-8 mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            <p class="text-xs text-slate-500 font-medium">এখানে ছবি ড্রপ করুন অথবা ক্লিক করুন</p>
+                        </div>
+                        <input id="imageInput" type="file" accept="image/*" class="hidden" />
+                    </div>
+                </div>
+
+                <div id="cameraSection">
+                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium py-2 px-4 rounded-xl text-sm transition cursor-pointer">
+                        📷 লাইভ ক্যামেরা দিয়ে ছবি তুলুন
+                    </button>
+                </div>
+
+                <div id="bgChangeSection" class="space-y-3">
+                    <hr class="border-slate-100 dark:border-slate-700">
+                    <h2 class="text-base font-semibold">২. ব্যাকগ্রাউন্ড কালার মাস্ক</h2>
+                    <div class="flex gap-3">
+                        <button data-color="original" class="bgColorBtn w-8 h-8 rounded-full border-2 border-blue-500 bg-slate-400" title="Original"></button>
+                        <button data-color="#ffffff" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-white" title="White"></button>
+                        <button data-color="#b9d6f2" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#b9d6f2]" title="Light Blue"></button>
+                        <button data-color="#00539c" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#00539c]" title="Passport Blue"></button>
+                    </div>
+                </div>
+
+                <hr class="border-slate-100 dark:border-slate-700">
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-1">৩. সাইজ লিমিট (KB)</h2>
+                    <label class="block text-sm font-medium mb-1">Target Size: <span id="sizeLabel" class="text-blue-500 font-bold">50 KB</span></label>
+                    <input id="sizeSlider" type="range" min="5" max="150" value="50" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                </div>
+
+                <button id="processBtn" disabled class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+                    ফাইনাল প্রসেস করুন
+                </button>
+            </div>
+
+            <div class="md:col-span-2 space-y-6">
+                
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center min-h-[420px]">
+                    <h3 id="studioTitle" class="text-sm font-semibold text-slate-400 mb-4 tracking-wider uppercase">ডিজিটাল এডিটিং স্টুডিও</h3>
+                    
+                    <div id="cropperWrapper" class="w-full max-h-[450px] bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700 relative">
+                        <p id="placeholderText" class="text-sm text-slate-400 text-center p-8 z-20">ফাইল ড্রপ করুন অথবা উপরে ক্যামেরা অন করুন</p>
+                        
+                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[400px] bg-black"></video>
+                        <button id="captureBtn" class="absolute bottom-4 bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hidden hover:bg-red-700 z-30 cursor-pointer">📸 ক্লিক</button>
+
+                        <div class="max-w-full max-h-[400px] relative">
+                            <img id="sourceImage" class="max-w-full hidden" alt="Source">
+                            <div class="passport-overlay"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultCard" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 hidden">
+                    <h3 class="text-lg font-semibold mb-6 text-emerald-500">✨ ফাইল প্রসেসড এবং ডাউনলোডের জন্য প্রস্তুত</h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+                        <div class="flex justify-center sm:col-span-4">
+                            <div class="border border-slate-200 dark:border-slate-700 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl">
+                                <img id="outputImage" class="w-[140px] h-[180px] object-contain rounded bg-white" alt="Output">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-8 space-y-4 text-center sm:text-left">
+                            <p class="text-sm text-slate-400">কম্প্রেসড ফাইল সাইজ: <span id="finalSize" class="font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">0 KB</span></p>
+                            
+                            <div class="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 justify-center sm:justify-start">
+                                <a id="downloadBtn" download="passport-photo.jpg" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition cursor-pointer">📥 JPEG ডাউনলোড</a>
+                                <button id="convertToPdfBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition cursor-pointer">📄 PDF প্রিন্ট শিট (A4)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="printArea" class="hidden"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+    <script>
+        // DOM bindings
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const tabPhoto = document.getElementById('tabPhoto');
+        const tabSign = document.getElementById('tabSign');
+        const bgChangeSection = document.getElementById('bgChangeSection');
+        const studioTitle = document.getElementById('studioTitle');
+        const dropZone = document.getElementById('dropZone');
+        const imageInput = document.getElementById('imageInput');
+        const sourceImage = document.getElementById('sourceImage');
+        const placeholderText = document.getElementById('placeholderText');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const sizeLabel = document.getElementById('sizeLabel');
+        const processBtn = document.getElementById('processBtn');
+        const outputImage = document.getElementById('outputImage');
+        const resultCard = document.getElementById('resultCard');
+        const finalSize = document.getElementById('finalSize');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const convertToPdfBtn = document.getElementById('convertToPdfBtn');
+        const printArea = document.getElementById('printArea');
+        const cropperWrapper = document.getElementById('cropperWrapper');
+        
+        // Camera items
+        const startCamBtn = document.getElementById('startCamBtn');
+        const videoFeed = document.getElementById('videoFeed');
+        const captureBtn = document.getElementById('captureBtn');
+
+        let cropper = null;
+        let currentMode = 'photo';
+        let selectedBgColor = 'original';
+        let generatedBase64 = null;
+        let localStream = null;
+
+        // Theme management
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark'); themeIcon.textContent = '☀️';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); themeIcon.textContent = '🌙';
+            } else {
+                document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); themeIcon.textContent = '☀️';
+            }
+        });
+
+        // Drag & Drop Functionality
+        dropZone.addEventListener('click', () => imageInput.click());
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('bg-blue-50', 'dark:bg-slate-800'); }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('bg-blue-50', 'dark:bg-slate-800'); }, false);
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if(files.length) { handleFileSelection(files[0]); }
+        });
+        imageInput.addEventListener('change', (e) => { if(e.target.files.length) handleFileSelection(e.target.files[0]); });
+
+        // Live Camera Capture Implementation
+        startCamBtn.addEventListener('click', async () => {
+            resetEditor();
+            placeholderText.classList.add('hidden');
+            videoFeed.classList.remove('hidden');
+            captureBtn.classList.remove('hidden');
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                videoFeed.srcObject = localStream;
+            } catch (err) {
+                alert("ক্যামেরা অন করা সম্ভব হয়নি। অনুগ্রহ করে পারমিশন চেক করুন।");
+                resetEditor();
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            if(!localStream) return;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoFeed.videoWidth;
+            tempCanvas.height = videoFeed.videoHeight;
+            tempCanvas.getContext('2d').drawImage(videoFeed, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            const dataUrl = tempCanvas.toDataURL('image/jpeg');
+            stopCamera();
+            initCropper(dataUrl);
+        });
+
+        function stopCamera() {
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            videoFeed.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+        }
+
+        // File Handler
+        function handleFileSelection(file) {
+            stopCamera();
+            const reader = new FileReader();
+            reader.onload = (e) => initCropper(e.target.result);
+            reader.readAsDataURL(file);
+        }
+
+        // Initialize Cropper Core Engine
+        function initCropper(imageSrc) {
+            if (cropper) { cropper.destroy(); }
+            sourceImage.src = imageSrc;
+            sourceImage.classList.remove('hidden');
+            placeholderText.classList.add('hidden');
+            processBtn.removeAttribute('disabled');
+
+            const aspect = (currentMode === 'photo') ? (3.5 / 4.5) : (3 / 1);
+            if(currentMode === 'photo') { cropperWrapper.classList.add('show-overlay'); }
+
+            cropper = new Cropper(sourceImage, {
+                aspectRatio: aspect,
+                viewMode: 1,
+                autoCropArea: 0.9,
+                background: false,
+                responsive: true
+            });
+        }
+
+        // Processing Logic
+        processBtn.addEventListener('click', () => {
+            if (!cropper) return;
+            const width = (currentMode === 'photo') ? 413 : 600;
+            const height = (currentMode === 'photo') ? 531 : 200;
+            let canvas = cropper.getCroppedCanvas({ width: width, height: height });
+
+            if (currentMode === 'photo' && selectedBgColor !== 'original') {
+                const bgCanvas = document.createElement('canvas');
+                bgCanvas.width = width; bgCanvas.height = height;
+                const ctx = bgCanvas.getContext('2d');
+                ctx.fillStyle = selectedBgColor; ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(canvas, 0, 0);
+                canvas = bgCanvas;
+            }
+
+            const targetKB = parseInt(sizeSlider.value);
+            let quality = 0.95; let base64Data = canvas.toDataURL('image/jpeg', quality);
+            while (calculateKB(base64Data) > targetKB && quality > 0.05) {
+                quality -= 0.04; base64Data = canvas.toDataURL('image/jpeg', quality);
+            }
+
+            generatedBase64 = base64Data;
+            outputImage.src = base64Data;
+            downloadBtn.href = base64Data;
+            downloadBtn.download = (currentMode === 'photo') ? "passport-photo.jpg" : "signature.jpg";
+            finalSize.textContent = calculateKB(base64Data).toFixed(1) + ' KB';
+            resultCard.classList.remove('hidden');
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Tab switches
+        tabPhoto.addEventListener('click', () => {
+            currentMode = 'photo';
+            tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
+            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer";
+            bgChangeSection.classList.remove('hidden');
+            document.getElementById('cameraSection').classList.remove('hidden');
+            studioTitle.textContent = "ডিজিটাল এডিটিং স্টুডিও (ফটো মোড)";
+            sizeSlider.value = 50; sizeLabel.textContent = "50 KB";
+            outputImage.className = "w-[140px] h-[180px] object-contain rounded bg-white";
+            convertToPdfBtn.classList.remove('hidden');
+            resetEditor();
+        });
+
+        tabSign.addEventListener('click', () => {
+            currentMode = 'sign';
+            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
+            tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer";
+            bgChangeSection.classList.add('hidden');
+            document.getElementById('cameraSection').classList.add('hidden');
+            studioTitle.textContent = "ডিজিটাল এডিটিং স্টুডিও (সিগনেচার মোড)";
+            sizeSlider.value = 15; sizeLabel.textContent = "15 KB";
+            outputImage.className = "w-[200px] h-[70px] object-contain rounded bg-white";
+            convertToPdfBtn.classList.add('hidden');
+            resetEditor();
+        });
+
+        function resetEditor() {
+            stopCamera();
+            if (cropper) { cropper.destroy(); cropper = null; }
+            cropperWrapper.classList.remove('show-overlay');
+            sourceImage.classList.add('hidden');
+            placeholderText.classList.remove('hidden');
+            processBtn.setAttribute('disabled', 'true');
+            resultCard.classList.add('hidden');
+            imageInput.value = '';
+        }
+
+        document.querySelectorAll('.bgColorBtn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.bgColorBtn').forEach(b => b.classList.remove('border-blue-500'));
+                e.target.classList.add('border-blue-500');
+                selectedBgColor = e.target.getAttribute('data-color');
+            });
+        });
+        sizeSlider.addEventListener('input', (e) => { sizeLabel.textContent = e.target.value + ' KB'; });
+
+        convertToPdfBtn.addEventListener('click', () => {
+            if (!generatedBase64) return;
+            printArea.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                const img = document.createElement('img'); img.src = generatedBase64; img.className = 'print-photo'; printArea.appendChild(img);
+            }
+            window.print();
+        });
+
+        function calculateKB(base64String) {
+            const padding = (base64String.endsWith('=')) ? (base64String.endsWith('==') ? 2 : 1) : 0;
+            return (base64String.length * (3/4) - padding) / 1024;
+        }
+    </script>
+</body>
+</html>
