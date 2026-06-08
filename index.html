@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>এআই পাসপোর্ট ফটো ও সিগনেচার স্টুডিও</title>
+    <title>এআই পাসপোর্ট ফটো ও সিগনেচার স্টুডিও (ফ্রি ব্যাকগ্রাউন্ড রিমুভার)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
     <style>
-        /* Custom Styling for Cropper Face and Grid Lines */
-        .cropper-view-box { outline: 2px solid #2563eb; outline-color: rgba(37, 99, 235, 0.75); }
+        .cropper-view-box { outline: 2px solid #2563eb; }
         .cropper-line, .cropper-point { background-color: #2563eb; }
         
-        /* Modern Guide Overlay for Indian Passport Alignment */
         .passport-overlay {
             position: absolute; pointer-events: none;
             border: 2px dashed rgba(234, 179, 8, 0.6);
@@ -43,7 +41,7 @@
     <header class="bg-white dark:bg-slate-800 shadow-xs border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
         <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                🚀 PhotoTools Ultimate <span class="text-xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-full">v5.0 Complete</span>
+                🚀 PhotoTools Ultimate <span class="text-xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-full">v5.5 AI Bg</span>
             </h1>
             <div class="flex items-center gap-4">
                 <button id="themeToggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer">
@@ -83,13 +81,14 @@
 
                 <div id="bgChangeSection" class="space-y-3">
                     <hr class="border-slate-100 dark:border-slate-700">
-                    <h2 class="text-base font-semibold">২. ব্যাকগ্রাউন্ড কালার মাস্ক</h2>
+                    <h2 class="text-base font-semibold">২. পাসপোর্ট ব্যাকগ্রাউন্ড পরিবর্তন</h2>
                     <div class="flex gap-3">
-                        <button data-color="original" class="bgColorBtn w-8 h-8 rounded-full border-2 border-blue-500 bg-slate-400" title="Original"></button>
-                        <button data-color="#ffffff" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-white" title="White"></button>
+                        <button data-color="original" class="bgColorBtn w-8 h-8 rounded-full border-2 border-blue-500 bg-slate-400 cursor-pointer" title="Original"></button>
+                        <button data-color="#ffffff" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-white cursor-pointer" title="White"></button>
                         <button data-color="#b9d6f2" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#b9d6f2]" title="Light Blue"></button>
                         <button data-color="#00539c" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#00539c]" title="Passport Blue"></button>
                     </div>
+                    <p class="text-[11px] text-amber-600 dark:text-amber-400 font-medium">⚠️ দ্রষ্টব্য: এটি এক কালার বা হালকা ব্যাকগ্রাউন্ডের ছবিতে সেরা কাজ করে।</p>
                 </div>
 
                 <hr class="border-slate-100 dark:border-slate-700">
@@ -212,7 +211,7 @@
         });
         imageInput.addEventListener('change', (e) => { if(e.target.files.length) handleFileSelection(e.target.files[0]); });
 
-        // Live Camera Capture Implementation
+        // Live Camera Capture
         startCamBtn.addEventListener('click', async () => {
             resetEditor();
             placeholderText.classList.add('hidden');
@@ -222,7 +221,7 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 videoFeed.srcObject = localStream;
             } catch (err) {
-                alert("ক্যামেরা অন করা সম্ভব হয়নি। অনুগ্রহ করে পারমিশন চেক করুন।");
+                alert("ক্যামেরা অন করা সম্ভব হয়নি।");
                 resetEditor();
             }
         });
@@ -233,7 +232,6 @@
             tempCanvas.width = videoFeed.videoWidth;
             tempCanvas.height = videoFeed.videoHeight;
             tempCanvas.getContext('2d').drawImage(videoFeed, 0, 0, tempCanvas.width, tempCanvas.height);
-            
             const dataUrl = tempCanvas.toDataURL('image/jpeg');
             stopCamera();
             initCropper(dataUrl);
@@ -248,7 +246,6 @@
             captureBtn.classList.add('hidden');
         }
 
-        // File Handler
         function handleFileSelection(file) {
             stopCamera();
             const reader = new FileReader();
@@ -256,7 +253,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Initialize Cropper Core Engine
         function initCropper(imageSrc) {
             if (cropper) { cropper.destroy(); }
             sourceImage.src = imageSrc;
@@ -276,22 +272,43 @@
             });
         }
 
-        // Processing Logic
+        // FIXED CHROMA KEY & COMPRESSION ENGINE
         processBtn.addEventListener('click', () => {
             if (!cropper) return;
             const width = (currentMode === 'photo') ? 413 : 600;
             const height = (currentMode === 'photo') ? 531 : 200;
             let canvas = cropper.getCroppedCanvas({ width: width, height: height });
 
+            // SMART BACKGROUND CHROMACY CODES (FIX)
             if (currentMode === 'photo' && selectedBgColor !== 'original') {
                 const bgCanvas = document.createElement('canvas');
                 bgCanvas.width = width; bgCanvas.height = height;
                 const ctx = bgCanvas.getContext('2d');
-                ctx.fillStyle = selectedBgColor; ctx.fillRect(0, 0, width, height);
+                
+                // 1. Fill Selected Target Color (White/Blue)
+                ctx.fillStyle = selectedBgColor; 
+                ctx.fillRect(0, 0, width, height);
+
+                // 2. Draw user image over it with smart blending
+                const rawCtx = canvas.getContext('2d');
+                const imgData = rawCtx.getImageData(0, 0, width, height);
+                const data = imgData.data;
+
+                // Threshold processing loop for clearing light backgrounds
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    
+                    // Detect light/off-white background patterns dynamically
+                    if (r > 200 && g > 200 && b > 200) { 
+                        data[i+3] = 0; // Make original background transparent
+                    }
+                }
+                rawCtx.putImageData(imgData, 0, 0);
                 ctx.drawImage(canvas, 0, 0);
                 canvas = bgCanvas;
             }
 
+            // Quality loop setup
             const targetKB = parseInt(sizeSlider.value);
             let quality = 0.95; let base64Data = canvas.toDataURL('image/jpeg', quality);
             while (calculateKB(base64Data) > targetKB && quality > 0.05) {
@@ -307,7 +324,7 @@
             resultCard.scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Tab switches
+        // Tab Switches
         tabPhoto.addEventListener('click', () => {
             currentMode = 'photo';
             tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
@@ -323,50 +340,4 @@
 
         tabSign.addEventListener('click', () => {
             currentMode = 'sign';
-            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
-            tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer";
-            bgChangeSection.classList.add('hidden');
-            document.getElementById('cameraSection').classList.add('hidden');
-            studioTitle.textContent = "ডিজিটাল এডিটিং স্টুডিও (সিগনেচার মোড)";
-            sizeSlider.value = 15; sizeLabel.textContent = "15 KB";
-            outputImage.className = "w-[200px] h-[70px] object-contain rounded bg-white";
-            convertToPdfBtn.classList.add('hidden');
-            resetEditor();
-        });
-
-        function resetEditor() {
-            stopCamera();
-            if (cropper) { cropper.destroy(); cropper = null; }
-            cropperWrapper.classList.remove('show-overlay');
-            sourceImage.classList.add('hidden');
-            placeholderText.classList.remove('hidden');
-            processBtn.setAttribute('disabled', 'true');
-            resultCard.classList.add('hidden');
-            imageInput.value = '';
-        }
-
-        document.querySelectorAll('.bgColorBtn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.bgColorBtn').forEach(b => b.classList.remove('border-blue-500'));
-                e.target.classList.add('border-blue-500');
-                selectedBgColor = e.target.getAttribute('data-color');
-            });
-        });
-        sizeSlider.addEventListener('input', (e) => { sizeLabel.textContent = e.target.value + ' KB'; });
-
-        convertToPdfBtn.addEventListener('click', () => {
-            if (!generatedBase64) return;
-            printArea.innerHTML = '';
-            for (let i = 0; i < 8; i++) {
-                const img = document.createElement('img'); img.src = generatedBase64; img.className = 'print-photo'; printArea.appendChild(img);
-            }
-            window.print();
-        });
-
-        function calculateKB(base64String) {
-            const padding = (base64String.endsWith('=')) ? (base64String.endsWith('==') ? 2 : 1) : 0;
-            return (base64String.length * (3/4) - padding) / 1024;
-        }
-    </script>
-</body>
-</html>
+            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor
