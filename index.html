@@ -6,6 +6,7 @@
     <title>Aura Forge — Media Lab</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     
     <script>
@@ -77,53 +78,45 @@
     <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-brand-accent/10 blur-[120px] rounded-full pointer-events-none z-0 animate-pulse-slow"></div>
     <div class="absolute top-[300px] right-10 w-[300px] h-[300px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none z-0"></div>
 
-    <header class="border-b border-white/[0.06] bg-space-base/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+    <header class="border-b border-white/[0.06] bg-space-base/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="#" class="group flex items-center gap-3 focus:outline-none">
-                <div class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] shadow-[0_0_15px_rgba(94,106,210,0.1)] group-hover:border-brand-accent/40 transition-all duration-300 overflow-hidden">
-                    <div class="absolute w-2 h-2 rounded-full bg-brand-accent shadow-[0_0_8px_#5E6AD2] group-hover:scale-125 transition-transform duration-300"></div>
-                    <div class="absolute inset-0 bg-gradient-to-tr from-brand-accent/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] flex items-center justify-center">
+                    <div class="w-2 h-2 rounded-full bg-brand-accent"></div>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-semibold tracking-tight bg-gradient-to-b from-white via-white/95 to-white/70 bg-clip-text text-transparent group-hover:from-white group-hover:to-brand-bright transition-all duration-300">
-                        Aura Forge
-                    </span>
+                    <span class="text-sm font-semibold tracking-tight text-white">Aura Forge</span>
                     <span class="text-[9px] font-mono tracking-widest text-[#8A8F98] uppercase">Media Lab</span>
                 </div>
-            </a>
-
+            </div>
             <div class="text-[10px] font-mono tracking-wider text-[#8A8F98] bg-white/[0.02] border border-white/[0.06] px-3 py-1.5 rounded-lg flex items-center gap-2">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Status: Core Secured
+                Status: Core Active
             </div>
         </div>
     </header>
 
     <main class="max-w-6xl mx-auto px-6 py-12 relative z-10">
-        
-        <div class="bg-white/[0.02] border border-white/[0.06] p-1 rounded-xl max-w-sm mx-auto mb-12 shadow-[0_0_30px_rgba(0,0,0,0.3)] flex gap-1">
-            <button id="tabPhoto" class="flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] shadow-sm transition-all duration-200 text-[#EDEDEF] cursor-pointer">👤 Passport Photo</button>
-            <button id="tabPdf" class="flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] transition-all duration-200 cursor-pointer">📄 PDF Reducer</button>
+        <div class="bg-white/[0.02] border border-white/[0.06] p-1 rounded-xl max-w-sm mx-auto mb-12 flex gap-1">
+            <button id="tabPhoto" class="flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] text-[#EDEDEF] cursor-pointer transition-all">👤 Passport Photo</button>
+            <button id="tabPdf" class="flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] cursor-pointer transition-all">📄 PDF Reducer</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-            <div class="lg:col-span-4 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.4)] space-y-6">
-                
+            <div class="lg:col-span-4 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] space-y-6">
                 <div class="space-y-3">
                     <h2 id="sourceTitle" class="text-xs font-mono uppercase tracking-widest text-[#8A8F98]">1. Select File Source</h2>
-                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-40 border border-white/10 border-dashed rounded-xl cursor-pointer bg-space-deep/60 hover:bg-white/[0.02] hover:border-brand-accent/50 transition-all duration-300 relative group overflow-hidden">
-                        <div class="absolute inset-0 bg-brand-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <svg class="w-7 h-7 mb-3 text-[#8A8F98] group-hover:text-brand-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-40 border border-white/10 border-dashed rounded-xl cursor-pointer bg-space-deep/60 hover:border-brand-accent/50 transition-all relative group overflow-hidden">
+                        <svg class="w-7 h-7 mb-3 text-[#8A8F98]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                         <p id="dropZoneText" class="text-xs text-[#8A8F98] mb-2">Drop your file here or browse</p>
-                        <span id="dropZoneBtnText" class="text-[11px] bg-white/[0.06] hover:bg-white/10 text-[#EDEDEF] border border-white/10 px-3 py-1 rounded-md font-medium transition-all">Choose File</span>
+                        <span class="text-[11px] bg-white/[0.06] text-[#EDEDEF] border border-white/10 px-3 py-1 rounded-md font-medium">Choose File</span>
                         <input id="fileInput" type="file" accept="image/*" class="hidden" />
                     </div>
-                    <p id="fileError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg hidden transition-all"></p>
+                    <p id="fileError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg hidden"></p>
                 </div>
 
-                <div id="cameraSection" class="transition-all">
-                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-[#EDEDEF] font-medium py-2.5 px-4 rounded-xl text-xs transition-all cursor-pointer shadow-sm">
+                <div id="cameraSection">
+                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-[#EDEDEF] font-medium py-2.5 px-4 rounded-xl text-xs transition-all cursor-pointer">
                         <span id="camBtnText">📷 Use Live Camera</span>
                     </button>
                 </div>
@@ -140,38 +133,30 @@
                     </div>
                 </div>
 
-                <button id="processBtn" disabled class="w-full bg-brand-accent hover:bg-brand-bright text-white font-medium py-3 px-4 rounded-xl shadow-[0_4px_20px_rgba(94,106,210,0.3)] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer flex justify-center items-center gap-2.5 text-xs tracking-wide uppercase font-mono">
+                <button id="processBtn" disabled class="w-full bg-brand-accent hover:bg-brand-bright text-white font-medium py-3 px-4 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex justify-center items-center gap-2.5 text-xs tracking-wide uppercase font-mono">
                     <span id="btnText">Run Process Engine</span>
                     <div id="loader" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
                 </button>
             </div>
 
             <div class="lg:col-span-8 space-y-6">
+                <div class="bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] flex flex-col items-center justify-center min-h-[440px] relative">
+                    <h3 id="studioTitle" class="text-[10px] font-mono text-[#8A8F98] mb-6 tracking-widest uppercase bg-white/[0.04] px-2.5 py-1 rounded-md">Engine Studio Monitor</h3>
 
-                <div class="bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center min-h-[440px] relative overflow-hidden group">
-                    <div class="absolute top-3 left-4 flex gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-red-500/40"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500/40"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-green-500/40"></span>
-                    </div>
-                    <h3 id="studioTitle" class="text-[10px] font-mono text-[#8A8F98] mb-6 tracking-widest uppercase bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/[0.04]">Engine Studio Monitor</h3>
+                    <div id="studioWrapper" class="w-full min-h-[320px] bg-space-deep/80 rounded-xl flex items-center justify-center border border-white/[0.06] relative p-4">
+                        <p id="placeholderText" class="text-xs text-[#8A8F98] text-center max-w-sm font-mono">[ System Ready — Please upload a file or switch on live feed ]</p>
+                        
+                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[350px] rounded-lg bg-black object-cover"></video>
+                        <button id="captureBtn" class="absolute bottom-6 bg-red-600 hover:bg-red-700 text-white text-xs px-6 py-2.5 rounded-full font-mono hidden z-30">📸 SNAP CAPTURE</button>
 
-                    <div id="studioWrapper" class="w-full max-h-[420px] bg-space-deep/80 rounded-xl overflow-hidden flex items-center justify-center border border-white/[0.06] relative p-4 shadow-inner min-h-[300px]">
-                        <p id="placeholderText" class="text-xs text-[#8A8F98] text-center max-w-sm leading-relaxed p-8 z-20 font-mono">
-                            [ System Ready — Please upload a file or switch on the live feed ]
-                        </p>
-
-                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[380px] rounded-lg bg-black object-cover"></video>
-                        <button id="captureBtn" class="absolute bottom-6 bg-red-600 text-white text-xs px-6 py-2.5 rounded-full font-mono tracking-wider shadow-[0_4px_15px_rgba(220,38,38,0.4)] hidden hover:bg-red-700 z-30 cursor-pointer transition-all active:scale-95">📸 SNAP CAPTURE</button>
-
-                        <div id="cropperContainer" class="max-w-full max-h-[380px] relative hidden">
-                            <img id="sourceImage" class="max-w-full max-h-[350px]" alt="Source Container">
+                        <div id="cropperContainer" class="max-w-full max-h-[350px] relative hidden">
+                            <img id="sourceImage" class="max-w-full max-h-[320px]" alt="Source">
                             <div class="passport-overlay"></div>
                         </div>
 
                         <div id="pdfInfoView" class="hidden text-center space-y-4">
                             <div class="w-16 h-16 mx-auto bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-400">
-                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/><path d="M5.293 7.293A1 1 0 016 7v7a3 3 0 003 3h7a1 1 0 110 2H9a5 5 0 01-5-5V8a1 1 0 011.293-.707z"/></svg>
+                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/></svg>
                             </div>
                             <div>
                                 <p id="pdfName" class="font-medium text-sm text-[#EDEDEF] truncate max-w-xs mx-auto"></p>
@@ -181,114 +166,286 @@
                     </div>
                 </div>
 
-                <div id="resultCard" class="bg-gradient-to-r from-emerald-500/5 to-transparent p-6 rounded-2xl border border-emerald-500/20 shadow-xl hidden">
-                    <h3 id="resultStatusText" class="text-sm font-semibold mb-6 text-emerald-400 flex items-center gap-2">
-                        <span>✨ Pipeline Success: File processed and ready for download</span>
-                    </h3>
-
-                    <p id="sizeWarning" class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mb-4 hidden">⚠️ Unable to match the target size. This output is at its maximum optimization threshold.</p>
-
+                <div id="resultCard" class="bg-gradient-to-r from-emerald-500/5 to-transparent p-6 rounded-2xl border border-emerald-500/20 hidden">
+                    <h3 id="resultStatusText" class="text-sm font-semibold mb-6 text-emerald-400">✨ Pipeline Success: File processed</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
                         <div class="flex justify-center sm:col-span-4">
-                            <div id="outputPreviewWrapper" class="border border-white/[0.08] p-2.5 bg-space-deep rounded-xl shadow-2xl">
-                                <img id="outputImage" class="w-[130px] h-[165px] object-contain rounded-lg bg-space-elevated" alt="Output Image Pipeline">
+                            <div class="border border-white/[0.08] p-2.5 bg-space-deep rounded-xl">
+                                <img id="outputImage" class="w-[130px] h-[165px] object-contain rounded-lg hidden" alt="Output Preview">
                                 <div id="pdfOutputIcon" class="w-[130px] h-[165px] flex flex-col items-center justify-center bg-red-500/5 border border-red-500/10 rounded-lg hidden">
                                     <svg class="w-10 h-10 text-red-500/80" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/></svg>
-                                    <span id="pdfOutputTag" class="text-[9px] font-mono tracking-wider font-bold mt-3 text-red-400 uppercase">REDUCED PDF</span>
+                                    <span class="text-[9px] font-mono tracking-wider font-bold mt-3 text-red-400 uppercase">REDUCED PDF</span>
                                 </div>
                             </div>
                         </div>
                         <div class="sm:col-span-8 space-y-4 text-center sm:text-left">
-                            <p id="sizeInfoRow" class="text-xs font-mono text-[#8A8F98]">Generated Output Size: <span id="finalSize" class="font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md ml-1">0 KB</span></p>
-                            <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-2 justify-center sm:justify-start">
-                                <a id="downloadBtn" class="bg-brand-accent hover:bg-brand-bright text-white font-medium py-2.5 px-5 rounded-lg text-xs transition-all cursor-pointer text-center flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">📥 Download File</a>
-                                <button id="convertToPdfBtn" class="bg-white/[0.04] hover:bg-white/[0.08] text-[#EDEDEF] border border-white/[0.1] font-medium py-2.5 px-5 rounded-lg text-xs transition-all cursor-pointer">📄 PDF Print Sheet (A4)</button>
+                            <p class="text-xs font-mono text-[#8A8F98]">Output Size: <span id="finalSize" class="font-bold text-emerald-400">0 KB</span></p>
+                            <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
+                                <a id="downloadBtn" class="bg-brand-accent hover:bg-brand-bright text-white font-medium py-2 px-4 rounded-lg text-xs transition-all cursor-pointer">📥 Download File</a>
+                                <button id="convertToPdfBtn" class="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.1] py-2 px-4 rounded-lg text-xs hidden">📄 Print Sheet (A4)</button>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
 
-    <div id="printArea" style="visibility:hidden; position:absolute; pointer-events:none;"></div>
+    <div id="printArea" style="visibility:hidden; position:absolute;"></div>
 
     <script>
-        // ── DOM Structural Hooks ──────────────────────────────────────────
-        const tabPhoto        = document.getElementById('tabPhoto');
-        const tabPdf          = document.getElementById('tabPdf');
-        const studioTitle     = document.getElementById('studioTitle');
-        const dropZone        = document.getElementById('dropZone');
-        const dropZoneText    = document.getElementById('dropZoneText');
-        const fileInput       = document.getElementById('fileInput');
-        const fileError       = document.getElementById('fileError');
-        const sourceImage     = document.getElementById('sourceImage');
+        // DOM Hooks
+        const tabPhoto = document.getElementById('tabPhoto');
+        const tabPdf = document.getElementById('tabPdf');
+        const dropZone = document.getElementById('dropZone');
+        const dropZoneText = document.getElementById('dropZoneText');
+        const fileInput = document.getElementById('fileInput');
+        const fileError = document.getElementById('fileError');
+        const sourceImage = document.getElementById('sourceImage');
         const placeholderText = document.getElementById('placeholderText');
-        const sizeSlider      = document.getElementById('sizeSlider');
-        const sizeLabel       = document.getElementById('sizeLabel');
-        const processBtn      = document.getElementById('processBtn');
-        const btnText         = document.getElementById('btnText');
-        const loader          = document.getElementById('loader');
-        const outputImage     = document.getElementById('outputImage');
-        const pdfOutputIcon   = document.getElementById('pdfOutputIcon');
-        const pdfOutputTag    = document.getElementById('pdfOutputTag');
-        const resultCard      = document.getElementById('resultCard');
-        const finalSize       = document.getElementById('finalSize');
-        const sizeWarning     = document.getElementById('sizeWarning');
-        const downloadBtn     = document.getElementById('downloadBtn');
+        const sizeSlider = document.getElementById('sizeSlider');
+        const sizeLabel = document.getElementById('sizeLabel');
+        const processBtn = document.getElementById('processBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+        const outputImage = document.getElementById('outputImage');
+        const pdfOutputIcon = document.getElementById('pdfOutputIcon');
+        const resultCard = document.getElementById('resultCard');
+        const finalSize = document.getElementById('finalSize');
+        const downloadBtn = document.getElementById('downloadBtn');
         const convertToPdfBtn = document.getElementById('convertToPdfBtn');
-        const printArea       = document.getElementById('printArea');
         const cropperContainer = document.getElementById('cropperContainer');
-        const startCamBtn     = document.getElementById('startCamBtn');
-        const camBtnText      = document.getElementById('camBtnText');
-        const videoFeed       = document.getElementById('videoFeed');
-        const captureBtn      = document.getElementById('captureBtn');
-        const pdfInfoView     = document.getElementById('pdfInfoView');
-        const pdfName         = document.getElementById('pdfName');
-        const pdfSize         = document.getElementById('pdfSize');
-        const sourceTitle     = document.getElementById('sourceTitle');
-        const configSection   = document.getElementById('configSection');
-        const configTitle     = document.getElementById('configTitle');
+        const startCamBtn = document.getElementById('startCamBtn');
+        const camBtnText = document.getElementById('camBtnText');
+        const videoFeed = document.getElementById('videoFeed');
+        const captureBtn = document.getElementById('captureBtn');
+        const pdfInfoView = document.getElementById('pdfInfoView');
+        const pdfName = document.getElementById('pdfName');
+        const pdfSize = document.getElementById('pdfSize');
+        const sourceTitle = document.getElementById('sourceTitle');
+        const cameraSection = document.getElementById('cameraSection');
+        const configTitle = document.getElementById('configTitle');
         const targetLabelPrefix = document.getElementById('targetLabelPrefix');
-        const cameraSection   = document.getElementById('cameraSection');
-        const resultStatusText = document.getElementById('resultStatusText');
-        const sizeInfoRow     = document.getElementById('sizeInfoRow');
+        const studioTitle = document.getElementById('studioTitle');
+        const printArea = document.getElementById('printArea');
 
-        let cropper         = null;
-        let currentMode     = 'photo'; 
+        let cropper = null;
+        let currentMode = 'photo';
+        let rawPdfBuffer = null;
+        let localStream = null;
         let generatedBase64 = null;
-        let pdfBlobData     = null;
-        let localStream     = null;
-        let isProcessing    = false; 
-        let rawPdfBuffer    = null;
-        let currentBlobUrl  = null;
+        let currentBlobUrl = null;
 
-        // ── Helper Utility Modules ────────────────────────────────────────
-        function calculateKB(base64String) {
-            const padding = (base64String.match(/=/g) || []).length;
-            const base64Length = base64String.length - (base64String.indexOf(',') + 1);
-            return ((base64Length * 0.75) - padding) / 1024;
+        // Slider Event Tracker
+        sizeSlider.addEventListener('input', e => {
+            sizeLabel.textContent = e.target.value + ' KB';
+        });
+
+        // Toggle Tabs
+        tabPhoto.addEventListener('click', () => {
+            if (currentMode === 'photo') return;
+            currentMode = 'photo';
+            toggleTabUI(tabPhoto, tabPdf);
+            setupPhotoUI();
+        });
+
+        tabPdf.addEventListener('click', () => {
+            if (currentMode === 'pdf') return;
+            currentMode = 'pdf';
+            toggleTabUI(tabPdf, tabPhoto);
+            setupPdfUI();
+        });
+
+        function toggleTabUI(active, inactive) {
+            active.className = "flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] text-[#EDEDEF] cursor-pointer transition-all";
+            inactive.className = "flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] cursor-pointer transition-all";
+        }
+
+        function setupPhotoUI() {
+            sourceTitle.textContent = "1. Select File Source";
+            dropZoneText.textContent = "Drop your file here or browse";
+            fileInput.accept = "image/*";
+            cameraSection.classList.remove('hidden');
+            configTitle.textContent = "2. Optimization Settings";
+            targetLabelPrefix.textContent = "Target Size Limit";
+            studioTitle.textContent = "Engine Studio Monitor";
+            stopCamera();
+            resetEditor();
+        }
+
+        function setupPdfUI() {
+            sourceTitle.textContent = "1. Upload Target PDF";
+            dropZoneText.textContent = "Drop PDF document here or browse";
+            fileInput.accept = "application/pdf";
+            cameraSection.classList.add('hidden');
+            configTitle.textContent = "2. Optimization Matrix";
+            targetLabelPrefix.textContent = "Compression Level";
+            studioTitle.textContent = "PDF Compression Monitor";
+            stopCamera();
+            resetEditor();
+        }
+
+        // Dropzone & File Handling
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => e.preventDefault());
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => {
+            if(e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (currentMode === 'photo' && file.type.startsWith('image/')) {
+                fileError.classList.add('hidden');
+                const reader = new FileReader();
+                reader.onload = e => initCropper(e.target.result);
+                reader.readAsDataURL(file);
+            } else if (currentMode === 'pdf' && (file.type === 'application/pdf' || file.name.endsWith('.pdf'))) {
+                fileError.classList.add('hidden');
+                resetEditor();
+                placeholderText.classList.add('hidden');
+                pdfName.textContent = file.name;
+                pdfSize.textContent = "Original Size: " + (file.size / 1024).toFixed(1) + " KB";
+                pdfInfoView.classList.remove('hidden');
+                processBtn.removeAttribute('disabled');
+
+                const reader = new FileReader();
+                reader.onload = e => { rawPdfBuffer = e.target.result; };
+                reader.readAsArrayBuffer(file);
+            } else {
+                fileError.textContent = "Invalid file type matching current tab selection!";
+                fileError.classList.remove('hidden');
+            }
+        }
+
+        function initCropper(imgSrc) {
+            resetEditor();
+            placeholderText.classList.add('hidden');
+            cropperContainer.classList.remove('hidden');
+            cropperContainer.classList.add('show-overlay');
+            sourceImage.src = imgSrc;
+            processBtn.removeAttribute('disabled');
+
+            cropper = new Cropper(sourceImage, {
+                aspectRatio: 3.5 / 4.5,
+                viewMode: 1,
+                autoCropArea: 0.9,
+                background: false
+            });
+        }
+
+        // Camera Management
+        startCamBtn.addEventListener('click', async () => {
+            if (localStream) { stopCamera(); return; }
+            resetEditor();
+            placeholderText.classList.add('hidden');
+            videoFeed.classList.remove('hidden');
+            captureBtn.classList.remove('hidden');
+            camBtnText.textContent = "⏳ Accessing Lens...";
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                videoFeed.srcObject = localStream;
+                camBtnText.textContent = "⏹ Stop Camera Feed";
+            } catch (err) {
+                alert("Camera modern hardware block detected.");
+                resetEditor();
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoFeed.videoWidth;
+            canvas.height = videoFeed.videoHeight;
+            canvas.getContext('2d').drawImage(videoFeed, 0, 0);
+            stopCamera();
+            initCropper(canvas.toDataURL('image/jpeg'));
+        });
+
+        function stopCamera() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            videoFeed.classList.add('hidden');
+            captureBtn.classList.add('hidden');
+            camBtnText.textContent = "📷 Use Live Camera";
         }
 
         function resetEditor() {
             if (cropper) { cropper.destroy(); cropper = null; }
-            sourceImage.src = '';
             cropperContainer.classList.add('hidden');
             pdfInfoView.classList.add('hidden');
             placeholderText.classList.remove('hidden');
             processBtn.setAttribute('disabled', 'true');
             resultCard.classList.add('hidden');
-            sizeWarning.classList.add('hidden');
-            cropperContainer.classList.remove('show-overlay');
-            rawPdfBuffer = null;
-            pdfBlobData = null;
-            generatedBase64 = null;
-            if (currentBlobUrl) {
-                URL.revokeObjectURL(currentBlobUrl);
-                currentBlobUrl = null;
-            }
         }
 
-        // FFIXED: Completed the slider value tracker listener block
-        sizeSl
+        // Process Module Execution
+        processBtn.addEventListener('click', async () => {
+            btnText.textContent = "Processing Core...";
+            loader.classList.remove('hidden');
+            processBtn.setAttribute('disabled', 'true');
+
+            if (currentMode === 'photo' && cropper) {
+                const canvas = cropper.getCroppedCanvas({ width: 413, height: 531 });
+                let quality = 0.9, target = parseInt(sizeSlider.value);
+                let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                
+                // Compression Loop
+                while ((dataUrl.length * 0.75) / 1024 > target && quality > 0.1) {
+                    quality -= 0.05;
+                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+                }
+                
+                generatedBase64 = dataUrl;
+                outputImage.src = dataUrl;
+                outputImage.classList.remove('hidden');
+                pdfOutputIcon.classList.add('hidden');
+                downloadBtn.href = dataUrl;
+                downloadBtn.download = "passport_photo.jpg";
+                convertToPdfBtn.classList.remove('hidden');
+                finalSize.textContent = ((dataUrl.length * 0.75) / 1024).toFixed(1) + " KB";
+                
+            } else if (currentMode === 'pdf' && rawPdfBuffer) {
+                try {
+                    const pdfDoc = await window.PDFLib.PDFDocument.load(rawPdfBuffer);
+                    const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
+                    const blob = new Blob([compressedBytes], { type: 'application/pdf' });
+                    
+                    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+                    currentBlobUrl = URL.createObjectURL(blob);
+                    
+                    outputImage.classList.add('hidden');
+                    pdfOutputIcon.classList.remove('hidden');
+                    downloadBtn.href = currentBlobUrl;
+                    downloadBtn.download = "compressed.pdf";
+                    convertToPdfBtn.classList.add('hidden');
+                    finalSize.textContent = (compressedBytes.length / 1024).toFixed(1) + " KB";
+                } catch(e) {
+                    alert("PDF reduction error encountered.");
+                }
+            }
+
+            loader.classList.add('hidden');
+            btnText.textContent = "Run Process Engine";
+            processBtn.removeAttribute('disabled');
+            resultCard.classList.remove('hidden');
+        });
+
+        // A4 Print Generation Module
+        convertToPdfBtn.addEventListener('click', () => {
+            if (!generatedBase64) return;
+            printArea.innerHTML = '';
+            for(let i=0; i<8; i++){
+                const img = document.createElement('img');
+                img.src = generatedBase64;
+                img.className = 'print-photo';
+                printArea.appendChild(img);
+            }
+            window.print();
+        });
+    </script>
+</body>
+</html>
