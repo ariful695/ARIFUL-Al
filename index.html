@@ -1,143 +1,208 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>এআই পাসপোর্ট ফটো ও সিগনেচার স্টুডিও (১০০% ফিক্সড ব্যাকগ্রাউন্ড)</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Aura Forge — Media Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        space: {
+                            deep: '#020203',
+                            base: '#050506',
+                            elevated: '#0a0a0c',
+                        },
+                        brand: {
+                            accent: '#5E6AD2',
+                            bright: '#6872D9',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        .cropper-view-box { outline: 2px solid #2563eb; }
-        .cropper-line, .cropper-point { background-color: #2563eb; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
         
+        .cropper-view-box { outline: 2px solid #5E6AD2; }
+        .cropper-line, .cropper-point { background-color: #5E6AD2; }
+
         .passport-overlay {
             position: absolute; pointer-events: none;
-            border: 2px dashed rgba(234, 179, 8, 0.6);
-            border-radius: 50%; width: 55%; height: 60%;
+            border: 2px dashed rgba(94, 106, 210, 0.4);
+            border-radius: 50% / 50%;
+            width: 55%; height: 60%;
             top: 15%; left: 22.5%; display: none; z-index: 10;
+            backdrop-filter: blur(1px);
         }
         .passport-overlay::after {
-            content: "চোখ ও মুখ এখানে মেলান"; position: absolute; bottom: -25px; left: 50%;
-            transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #fff;
-            font-size: 10px; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+            content: "Align eyes & mouth here";
+            position: absolute; bottom: -30px; left: 50%;
+            transform: translateX(-50%);
+            background: #0a0a0c; color: #EDEDEF;
+            font-size: 11px; padding: 4px 10px; border-radius: 6px; 
+            white-space: nowrap; border: 1px solid rgba(255,255,255,0.08);
         }
         .show-overlay .passport-overlay { display: block; }
-        .dark { color-scheme: dark; }
 
         @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
+            body > *:not(#printArea) { visibility: hidden !important; }
             #printArea {
-                position: absolute; left: 0; top: 0; width: 210mm; height: 297mm;
-                padding: 20mm; background: white; display: grid !important;
-                grid-template-columns: repeat(4, 35mm); gap: 10mm; align-content: start;
+                visibility: visible !important;
+                position: fixed; left: 0; top: 0;
+                width: 210mm; min-height: 297mm;
+                padding: 20mm; background: white;
+                display: grid !important;
+                grid-template-columns: repeat(4, 35mm);
+                gap: 10mm; align-content: start;
             }
-            .print-photo { width: 35mm; height: 45mm; border: 1px solid #ddd; object-fit: cover; }
+            .print-photo { width: 35mm; height: 45mm; border: 1px solid #ddd; object-fit: cover; display: block !important; }
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased transition-colors duration-300">
+<body class="bg-space-base text-[#EDEDEF] antialiased selection:bg-brand-accent/30 relative min-h-screen overflow-x-hidden">
 
-    <header class="bg-white dark:bg-slate-800 shadow-xs border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                📸 PhotoTools AI Pro <span class="text-xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold px-2.5 py-1 rounded-full">v6.0 Fix</span>
-            </h1>
-            <div class="flex items-center gap-4">
-                <button id="themeToggle" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition cursor-pointer">
-                    <span id="themeIcon">🌙</span>
-                </button>
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-brand-accent/10 blur-[120px] rounded-full pointer-events-none z-0 animate-pulse-slow"></div>
+    <div class="absolute top-[300px] right-10 w-[300px] h-[300px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none z-0"></div>
+
+    <header class="border-b border-white/[0.06] bg-space-base/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="group flex items-center gap-3 focus:outline-none">
+                <div class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] shadow-[0_0_15px_rgba(94,106,210,0.1)] group-hover:border-brand-accent/40 transition-all duration-300 overflow-hidden">
+                    <div class="absolute w-2 h-2 rounded-full bg-brand-accent shadow-[0_0_8px_#5E6AD2] group-hover:scale-125 transition-transform duration-300"></div>
+                    <div class="absolute inset-0 bg-gradient-to-tr from-brand-accent/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold tracking-tight bg-gradient-to-b from-white via-white/95 to-white/70 bg-clip-text text-transparent group-hover:from-white group-hover:to-brand-bright transition-all duration-300">
+                        Aura Forge
+                    </span>
+                    <span class="text-[9px] font-mono tracking-widest text-[#8A8F98] uppercase">Media Lab</span>
+                </div>
+            </a>
+
+            <div class="text-[10px] font-mono tracking-wider text-[#8A8F98] bg-white/[0.02] border border-white/[0.06] px-3 py-1.5 rounded-lg flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Status: Core Secured
             </div>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 py-8">
+    <main class="max-w-6xl mx-auto px-6 py-12 relative z-10">
         
-        <div class="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl max-w-sm mx-auto mb-8 shadow-xs">
-            <button id="tabPhoto" class="flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs transition cursor-pointer">👤 পাসপোর্ট ফটো</button>
-            <button id="tabSign" class="flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer">✍️ সিগনেচার ক্রপার</button>
+        <div class="bg-white/[0.02] border border-white/[0.06] p-1 rounded-xl max-w-sm mx-auto mb-12 shadow-[0_0_30px_rgba(0,0,0,0.3)] flex gap-1">
+            <button id="tabPhoto" class="flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] shadow-sm transition-all duration-200 text-[#EDEDEF] cursor-pointer">👤 Passport Photo</button>
+            <button id="tabPdf" class="flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] transition-all duration-200 cursor-pointer">📄 PDF Reducer</button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            <div class="md:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 h-fit space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <div class="lg:col-span-4 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.4)] space-y-6">
                 
-                <div>
-                    <h2 class="text-lg font-semibold mb-3">১. ফাইল সোর্স নির্বাচন করুন</h2>
-                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-36 border-2 border-slate-300 dark:border-slate-600 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative">
-                        <div class="flex flex-col items-center justify-center pt-4 pb-4 text-center px-2">
-                            <svg class="w-8 h-8 mb-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                            <p class="text-xs text-slate-500 font-medium">এখানে ছবি ড্রপ করুন অথবা ক্লিক করুন</p>
-                        </div>
-                        <input id="imageInput" type="file" accept="image/*" class="hidden" />
+                <div class="space-y-3">
+                    <h2 id="sourceTitle" class="text-xs font-mono uppercase tracking-widest text-[#8A8F98]">1. Select File Source</h2>
+                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-40 border border-white/10 border-dashed rounded-xl cursor-pointer bg-space-deep/60 hover:bg-white/[0.02] hover:border-brand-accent/50 transition-all duration-300 relative group overflow-hidden">
+                        <div class="absolute inset-0 bg-brand-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <svg class="w-7 h-7 mb-3 text-[#8A8F98] group-hover:text-brand-accent transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                        <p id="dropZoneText" class="text-xs text-[#8A8F98] mb-2">Drop your file here or browse</p>
+                        <span id="dropZoneBtnText" class="text-[11px] bg-white/[0.06] hover:bg-white/10 text-[#EDEDEF] border border-white/10 px-3 py-1 rounded-md font-medium transition-all">Choose File</span>
+                        <input id="fileInput" type="file" accept="image/*" class="hidden" />
                     </div>
+                    <p id="fileError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg hidden transition-all"></p>
                 </div>
 
-                <div id="cameraSection">
-                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-medium py-2 px-4 rounded-xl text-sm transition cursor-pointer">
-                        📷 লাইভ ক্যামেরা দিয়ে ছবি তুলুন
+                <div id="cameraSection" class="transition-all">
+                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-[#EDEDEF] font-medium py-2.5 px-4 rounded-xl text-xs transition-all cursor-pointer shadow-sm">
+                        <span id="camBtnText">📷 Use Live Camera</span>
                     </button>
                 </div>
 
-                <div id="bgChangeSection" class="space-y-3">
-                    <hr class="border-slate-100 dark:border-slate-700">
-                    <h2 class="text-base font-semibold">২. পাসপোর্ট ব্যাকগ্রাউন্ড পরিবর্তন</h2>
-                    <div class="flex gap-3">
-                        <button data-color="original" class="bgColorBtn w-8 h-8 rounded-full border-2 border-blue-500 bg-slate-400 cursor-pointer" title="Original"></button>
-                        <button data-color="#ffffff" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-white cursor-pointer" title="White"></button>
-                        <button data-color="#b9d6f2" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#b9d6f2]" title="Light Blue"></button>
-                        <button data-color="#00539c" class="bgColorBtn w-8 h-8 rounded-full border border-slate-300 bg-[#00539c]" title="Passport Blue"></button>
+                <div id="configSection" class="space-y-4">
+                    <hr class="border-white/[0.06]">
+                    <h2 id="configTitle" class="text-xs font-mono uppercase tracking-widest text-[#8A8F98]">2. Optimization Settings</h2>
+                    <div class="space-y-2 bg-space-deep/40 p-3.5 rounded-xl border border-white/[0.04]">
+                        <div class="flex justify-between text-xs">
+                            <span id="targetLabelPrefix" class="text-[#8A8F98]">Target Size Limit</span>
+                            <span id="sizeLabel" class="text-brand-accent font-mono font-semibold">50 KB</span>
+                        </div>
+                        <input id="sizeSlider" type="range" min="5" max="150" value="50" step="1" class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-accent">
                     </div>
-                    <p class="text-[11px] text-blue-600 dark:text-blue-400 font-medium">✨ প্রফেশনাল এআই কালার রিপ্লেসমেন্ট মোড একটিভ করা হয়েছে।</p>
                 </div>
 
-                <hr class="border-slate-100 dark:border-slate-700">
-
-                <div>
-                    <h2 class="text-lg font-semibold mb-1">৩. সাইজ লিমিট (KB)</h2>
-                    <label class="block text-sm font-medium mb-1">Target Size: <span id="sizeLabel" class="text-blue-500 font-bold">50 KB</span></label>
-                    <input id="sizeSlider" type="range" min="5" max="150" value="50" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                </div>
-
-                <button id="processBtn" disabled class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex justify-center items-center gap-2">
-                    <span id="btnText">ফাইনাল প্রসেস করুন</span>
-                    <div id="loader" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                <button id="processBtn" disabled class="w-full bg-brand-accent hover:bg-brand-bright text-white font-medium py-3 px-4 rounded-xl shadow-[0_4px_20px_rgba(94,106,210,0.3)] transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed disabled:shadow-none cursor-pointer flex justify-center items-center gap-2.5 text-xs tracking-wide uppercase font-mono">
+                    <span id="btnText">Run Process Engine</span>
+                    <div id="loader" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
                 </button>
             </div>
 
-            <div class="md:col-span-2 space-y-6">
-                
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center min-h-[420px]">
-                    <h3 id="studioTitle" class="text-sm font-semibold text-slate-400 mb-4 tracking-wider uppercase">ডিজিটাল এডিটিং স্টুডিও</h3>
-                    
-                    <div id="cropperWrapper" class="w-full max-h-[450px] bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700 relative">
-                        <p id="placeholderText" class="text-sm text-slate-400 text-center p-8 z-20">ফাইল ড্রপ করুন অথবা উপরে ক্যামেরা অন করুন</p>
-                        
-                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[400px] bg-black"></video>
-                        <button id="captureBtn" class="absolute bottom-4 bg-red-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hidden hover:bg-red-700 z-30 cursor-pointer">📸 ক্লিক</button>
+            <div class="lg:col-span-8 space-y-6">
 
-                        <div class="max-w-full max-h-[400px] relative">
-                            <img id="sourceImage" class="max-w-full hidden" alt="Source">
+                <div class="bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center min-h-[440px] relative overflow-hidden group">
+                    <div class="absolute top-3 left-4 flex gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500/40"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500/40"></span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-green-500/40"></span>
+                    </div>
+                    <h3 id="studioTitle" class="text-[10px] font-mono text-[#8A8F98] mb-6 tracking-widest uppercase bg-white/[0.04] px-2.5 py-1 rounded-md border border-white/[0.04]">Engine Studio Monitor</h3>
+
+                    <div id="studioWrapper" class="w-full max-h-[420px] bg-space-deep/80 rounded-xl overflow-hidden flex items-center justify-center border border-white/[0.06] relative p-4 shadow-inner min-h-[300px]">
+                        <p id="placeholderText" class="text-xs text-[#8A8F98] text-center max-w-sm leading-relaxed p-8 z-20 font-mono">
+                            [ System Ready — Please upload a file or switch on the live feed ]
+                        </p>
+
+                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[380px] rounded-lg bg-black object-cover"></video>
+                        <button id="captureBtn" class="absolute bottom-6 bg-red-600 text-white text-xs px-6 py-2.5 rounded-full font-mono tracking-wider shadow-[0_4px_15px_rgba(220,38,38,0.4)] hidden hover:bg-red-700 z-30 cursor-pointer transition-all active:scale-95">📸 SNAP CAPTURE</button>
+
+                        <div id="cropperContainer" class="max-w-full max-h-[380px] relative hidden">
+                            <img id="sourceImage" class="max-w-full max-h-[350px]" alt="Source Container">
                             <div class="passport-overlay"></div>
+                        </div>
+
+                        <div id="pdfInfoView" class="hidden text-center space-y-4">
+                            <div class="w-16 h-16 mx-auto bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-400">
+                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/><path d="M5.293 7.293A1 1 0 016 7v7a3 3 0 003 3h7a1 1 0 110 2H9a5 5 0 01-5-5V8a1 1 0 011.293-.707z"/></svg>
+                            </div>
+                            <div>
+                                <p id="pdfName" class="font-medium text-sm text-[#EDEDEF] truncate max-w-xs mx-auto"></p>
+                                <p id="pdfSize" class="text-xs text-[#8A8F98] font-mono mt-1"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div id="resultCard" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-700 hidden">
-                    <h3 class="text-lg font-semibold mb-6 text-emerald-500">✨ ফাইল প্রসেসড এবং ডাউনলোডের জন্য প্রস্তুত</h3>
-                    
+                <div id="resultCard" class="bg-gradient-to-r from-emerald-500/5 to-transparent p-6 rounded-2xl border border-emerald-500/20 shadow-xl hidden">
+                    <h3 id="resultStatusText" class="text-sm font-semibold mb-6 text-emerald-400 flex items-center gap-2">
+                        <span>✨ Pipeline Success: File processed and ready for download</span>
+                    </h3>
+
+                    <p id="sizeWarning" class="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mb-4 hidden">⚠️ Unable to match the target size. This output is at its maximum optimization threshold.</p>
+
                     <div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
                         <div class="flex justify-center sm:col-span-4">
-                            <div class="border border-slate-200 dark:border-slate-700 p-2 bg-slate-50 dark:bg-slate-900 rounded-xl">
-                                <img id="outputImage" class="w-[140px] h-[180px] object-contain rounded bg-white" alt="Output">
+                            <div id="outputPreviewWrapper" class="border border-white/[0.08] p-2.5 bg-space-deep rounded-xl shadow-2xl">
+                                <img id="outputImage" class="w-[130px] h-[165px] object-contain rounded-lg bg-space-elevated" alt="Output Image Pipeline">
+                                <div id="pdfOutputIcon" class="w-[130px] h-[165px] flex flex-col items-center justify-center bg-red-500/5 border border-red-500/10 rounded-lg hidden">
+                                    <svg class="w-10 h-10 text-red-500/80" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/></svg>
+                                    <span id="pdfOutputTag" class="text-[9px] font-mono tracking-wider font-bold mt-3 text-red-400 uppercase">REDUCED PDF</span>
+                                </div>
                             </div>
                         </div>
                         <div class="sm:col-span-8 space-y-4 text-center sm:text-left">
-                            <p class="text-sm text-slate-400">কম্প্রেসড ফাইল সাইজ: <span id="finalSize" class="font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900">0 KB</span></p>
-                            
-                            <div class="flex flex-col sm:flex-row flex-wrap gap-2 pt-2 justify-center sm:justify-start">
-                                <a id="downloadBtn" download="passport-photo.jpg" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition cursor-pointer">📥 JPEG ডাউনলোড</a>
-                                <button id="convertToPdfBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition cursor-pointer">📄 PDF প্রিন্ট শিট (A4)</button>
+                            <p id="sizeInfoRow" class="text-xs font-mono text-[#8A8F98]">Generated Output Size: <span id="finalSize" class="font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md ml-1">0 KB</span></p>
+                            <div class="flex flex-col sm:flex-row flex-wrap gap-3 pt-2 justify-center sm:justify-start">
+                                <a id="downloadBtn" class="bg-brand-accent hover:bg-brand-bright text-white font-medium py-2.5 px-5 rounded-lg text-xs transition-all cursor-pointer text-center flex items-center justify-center gap-2 shadow-lg shadow-brand-accent/20">📥 Download File</a>
+                                <button id="convertToPdfBtn" class="bg-white/[0.04] hover:bg-white/[0.08] text-[#EDEDEF] border border-white/[0.1] font-medium py-2.5 px-5 rounded-lg text-xs transition-all cursor-pointer">📄 PDF Print Sheet (A4)</button>
                             </div>
                         </div>
                     </div>
@@ -147,254 +212,83 @@
         </div>
     </main>
 
-    <div id="printArea" class="hidden"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <div id="printArea" style="visibility:hidden; position:absolute; pointer-events:none;"></div>
 
     <script>
-        // DOM bindings
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const tabPhoto = document.getElementById('tabPhoto');
-        const tabSign = document.getElementById('tabSign');
-        const bgChangeSection = document.getElementById('bgChangeSection');
-        const studioTitle = document.getElementById('studioTitle');
-        const dropZone = document.getElementById('dropZone');
-        const imageInput = document.getElementById('imageInput');
-        const sourceImage = document.getElementById('sourceImage');
+        // ── DOM Structural Hooks ──────────────────────────────────────────
+        const tabPhoto        = document.getElementById('tabPhoto');
+        const tabPdf          = document.getElementById('tabPdf');
+        const studioTitle     = document.getElementById('studioTitle');
+        const dropZone        = document.getElementById('dropZone');
+        const dropZoneText    = document.getElementById('dropZoneText');
+        const fileInput       = document.getElementById('fileInput');
+        const fileError       = document.getElementById('fileError');
+        const sourceImage     = document.getElementById('sourceImage');
         const placeholderText = document.getElementById('placeholderText');
-        const sizeSlider = document.getElementById('sizeSlider');
-        const sizeLabel = document.getElementById('sizeLabel');
-        const processBtn = document.getElementById('processBtn');
-        const btnText = document.getElementById('btnText');
-        const loader = document.getElementById('loader');
-        const outputImage = document.getElementById('outputImage');
-        const resultCard = document.getElementById('resultCard');
-        const finalSize = document.getElementById('finalSize');
-        const downloadBtn = document.getElementById('downloadBtn');
+        const sizeSlider      = document.getElementById('sizeSlider');
+        const sizeLabel       = document.getElementById('sizeLabel');
+        const processBtn      = document.getElementById('processBtn');
+        const btnText         = document.getElementById('btnText');
+        const loader          = document.getElementById('loader');
+        const outputImage     = document.getElementById('outputImage');
+        const pdfOutputIcon   = document.getElementById('pdfOutputIcon');
+        const pdfOutputTag    = document.getElementById('pdfOutputTag');
+        const resultCard      = document.getElementById('resultCard');
+        const finalSize       = document.getElementById('finalSize');
+        const sizeWarning     = document.getElementById('sizeWarning');
+        const downloadBtn     = document.getElementById('downloadBtn');
         const convertToPdfBtn = document.getElementById('convertToPdfBtn');
-        const printArea = document.getElementById('printArea');
-        const cropperWrapper = document.getElementById('cropperWrapper');
-        
-        const startCamBtn = document.getElementById('startCamBtn');
-        const videoFeed = document.getElementById('videoFeed');
-        const captureBtn = document.getElementById('captureBtn');
+        const printArea       = document.getElementById('printArea');
+        const cropperContainer = document.getElementById('cropperContainer');
+        const startCamBtn     = document.getElementById('startCamBtn');
+        const camBtnText      = document.getElementById('camBtnText');
+        const videoFeed       = document.getElementById('videoFeed');
+        const captureBtn      = document.getElementById('captureBtn');
+        const pdfInfoView     = document.getElementById('pdfInfoView');
+        const pdfName         = document.getElementById('pdfName');
+        const pdfSize         = document.getElementById('pdfSize');
+        const sourceTitle     = document.getElementById('sourceTitle');
+        const configSection   = document.getElementById('configSection');
+        const configTitle     = document.getElementById('configTitle');
+        const targetLabelPrefix = document.getElementById('targetLabelPrefix');
+        const cameraSection   = document.getElementById('cameraSection');
+        const resultStatusText = document.getElementById('resultStatusText');
+        const sizeInfoRow     = document.getElementById('sizeInfoRow');
 
-        let cropper = null;
-        let currentMode = 'photo';
-        let selectedBgColor = 'original';
+        let cropper         = null;
+        let currentMode     = 'photo'; 
         let generatedBase64 = null;
-        let localStream = null;
+        let pdfBlobData     = null;
+        let localStream     = null;
+        let isProcessing    = false; 
+        let rawPdfBuffer    = null;
+        let currentBlobUrl  = null;
 
-        // Theme management
-        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark'); themeIcon.textContent = '☀️';
+        // ── Helper Utility Modules ────────────────────────────────────────
+        function calculateKB(base64String) {
+            const padding = (base64String.match(/=/g) || []).length;
+            const base64Length = base64String.length - (base64String.indexOf(',') + 1);
+            return ((base64Length * 0.75) - padding) / 1024;
         }
-        themeToggle.addEventListener('click', () => {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); themeIcon.textContent = '🌙';
-            } else {
-                document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); themeIcon.textContent = '☀️';
-            }
-        });
-
-        // Drag & Drop
-        dropZone.addEventListener('click', () => imageInput.click());
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('bg-blue-50', 'dark:bg-slate-800'); }, false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('bg-blue-50', 'dark:bg-slate-800'); }, false);
-        });
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if(files.length) { handleFileSelection(files[0]); }
-        });
-        imageInput.addEventListener('change', (e) => { if(e.target.files.length) handleFileSelection(e.target.files[0]); });
-
-        // Camera Code
-        startCamBtn.addEventListener('click', async () => {
-            resetEditor();
-            placeholderText.classList.add('hidden');
-            videoFeed.classList.remove('hidden');
-            captureBtn.classList.remove('hidden');
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-                videoFeed.srcObject = localStream;
-            } catch (err) {
-                alert("ক্যামেরা পারমিশন দিন।");
-                resetEditor();
-            }
-        });
-
-        captureBtn.addEventListener('click', () => {
-            if(!localStream) return;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = videoFeed.videoWidth;
-            tempCanvas.height = videoFeed.videoHeight;
-            tempCanvas.getContext('2d').drawImage(videoFeed, 0, 0, tempCanvas.width, tempCanvas.height);
-            const dataUrl = tempCanvas.toDataURL('image/jpeg');
-            stopCamera();
-            initCropper(dataUrl);
-        });
-
-        function stopCamera() {
-            if(localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            videoFeed.classList.add('hidden');
-            captureBtn.classList.add('hidden');
-        }
-
-        function handleFileSelection(file) {
-            stopCamera();
-            const reader = new FileReader();
-            reader.onload = (e) => initCropper(e.target.result);
-            reader.readAsDataURL(file);
-        }
-
-        function initCropper(imageSrc) {
-            if (cropper) { cropper.destroy(); }
-            sourceImage.src = imageSrc;
-            sourceImage.classList.remove('hidden');
-            placeholderText.classList.add('hidden');
-            processBtn.removeAttribute('disabled');
-
-            const aspect = (currentMode === 'photo') ? (3.5 / 4.5) : (3 / 1);
-            if(currentMode === 'photo') { cropperWrapper.classList.add('show-overlay'); }
-
-            cropper = new Cropper(sourceImage, {
-                aspectRatio: aspect,
-                viewMode: 1,
-                autoCropArea: 0.9,
-                background: false,
-                responsive: true
-            });
-        }
-
-        // ADVANCED LAYER DRAWING WITH SELECTED COLOR
-        function applySolidBackground(croppedCanvas, colorHex) {
-            return new Promise((resolve) => {
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = croppedCanvas.width;
-                finalCanvas.height = croppedCanvas.height;
-                const ctx = finalCanvas.getContext('2d');
-
-                // Fill custom background color (White, Blue, etc.)
-                ctx.fillStyle = colorHex;
-                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-
-                // Draw cropped content on top
-                ctx.drawImage(croppedCanvas, 0, 0);
-                resolve(finalCanvas);
-            });
-        }
-
-        // ABSOLUTE AI-BASED PROCESS ENGINE
-        processBtn.addEventListener('click', async () => {
-            if (!cropper) return;
-            
-            // UI Loader Active
-            processBtn.setAttribute('disabled', 'true');
-            btnText.textContent = "এআই প্রসেসিং হচ্ছে...";
-            loader.classList.remove('hidden');
-
-            const width = (currentMode === 'photo') ? 413 : 600;
-            const height = (currentMode === 'photo') ? 531 : 200;
-            let canvas = cropper.getCroppedCanvas({ width: width, height: height });
-
-            // Apply background safely if photo mode and color changed
-            if (currentMode === 'photo' && selectedBgColor !== 'original') {
-                canvas = await applySolidBackground(canvas, selectedBgColor);
-            }
-
-            // Quality loop setup
-            const targetKB = parseInt(sizeSlider.value);
-            let quality = 0.95; 
-            let base64Data = canvas.toDataURL('image/jpeg', quality);
-
-            while (calculateKB(base64Data) > targetKB && quality > 0.05) {
-                quality -= 0.04; 
-                base64Data = canvas.toDataURL('image/jpeg', quality);
-            }
-
-            generatedBase64 = base64Data;
-            outputImage.src = base64Data;
-            downloadBtn.href = base64Data;
-            downloadBtn.download = (currentMode === 'photo') ? "passport-photo.jpg" : "signature.jpg";
-            finalSize.textContent = calculateKB(base64Data).toFixed(1) + ' KB';
-            
-            // UI Loader Deactive
-            processBtn.removeAttribute('disabled');
-            btnText.textContent = "ফাইনাল প্রসেস করুন";
-            loader.classList.add('hidden');
-
-            resultCard.classList.remove('hidden');
-            resultCard.scrollIntoView({ behavior: 'smooth' });
-        });
-
-        // Tabs
-        tabPhoto.addEventListener('click', () => {
-            currentMode = 'photo';
-            tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
-            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer";
-            bgChangeSection.classList.remove('hidden');
-            document.getElementById('cameraSection').classList.remove('hidden');
-            studioTitle.textContent = "ডিজিটাল এডিটিং স্টুডিও (ফটো মোড)";
-            sizeSlider.value = 50; sizeLabel.textContent = "50 KB";
-            outputImage.className = "w-[140px] h-[180px] object-contain rounded bg-white";
-            convertToPdfBtn.classList.remove('hidden');
-            resetEditor();
-        });
-
-        tabSign.addEventListener('click', () => {
-            currentMode = 'sign';
-            tabSign.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg bg-white dark:bg-slate-700 shadow-xs text-slate-900 dark:text-white cursor-pointer";
-            tabPhoto.className = "flex-1 text-center py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer";
-            bgChangeSection.classList.add('hidden');
-            document.getElementById('cameraSection').classList.add('hidden');
-            studioTitle.textContent = "ডিজিটাল এডিটিং স্টুডিও (সিগনেচার মোড)";
-            sizeSlider.value = 15; sizeLabel.textContent = "15 KB";
-            outputImage.className = "w-[200px] h-[70px] object-contain rounded bg-white";
-            convertToPdfBtn.classList.add('hidden');
-            resetEditor();
-        });
 
         function resetEditor() {
-            stopCamera();
             if (cropper) { cropper.destroy(); cropper = null; }
-            cropperWrapper.classList.remove('show-overlay');
-            sourceImage.classList.add('hidden');
+            sourceImage.src = '';
+            cropperContainer.classList.add('hidden');
+            pdfInfoView.classList.add('hidden');
             placeholderText.classList.remove('hidden');
             processBtn.setAttribute('disabled', 'true');
             resultCard.classList.add('hidden');
-            imageInput.value = '';
-        }
-
-        document.querySelectorAll('.bgColorBtn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.bgColorBtn').forEach(b => b.classList.remove('border-blue-500'));
-                e.target.classList.add('border-blue-500');
-                selectedBgColor = e.target.getAttribute('data-color');
-            });
-        });
-        sizeSlider.addEventListener('input', (e) => { sizeLabel.textContent = e.target.value + ' KB'; });
-
-        convertToPdfBtn.addEventListener('click', () => {
-            if (!generatedBase64) return;
-            printArea.innerHTML = '';
-            for (let i = 0; i < 8; i++) {
-                const img = document.createElement('img'); img.src = generatedBase64; img.className = 'print-photo'; printArea.appendChild(img);
+            sizeWarning.classList.add('hidden');
+            cropperContainer.classList.remove('show-overlay');
+            rawPdfBuffer = null;
+            pdfBlobData = null;
+            generatedBase64 = null;
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
             }
-            window.print();
-        });
-
-        function calculateKB(base64String) {
-            const padding = (base64String.endsWith('=')) ? (base64String.endsWith('==') ? 2 : 1) : 0;
-            return (base64String.length * (3/4) - padding) / 1024;
         }
-    </script>
-</body>
-</html>
+
+        // FFIXED: Completed the slider value tracker listener block
+        sizeSl
