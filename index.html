@@ -3,448 +3,766 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Forge — Media Lab</title>
+    <meta name="description" content="ClassRoom Live - Complete Online Classroom Platform">
+    <meta name="theme-color" content="#0052cc">
+    <title>ClassRoom Live - Online Classroom</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        space: {
-                            deep: '#020203',
-                            base: '#050506',
-                            elevated: '#0a0a0c',
-                        },
-                        brand: {
-                            accent: '#5E6AD2',
-                            bright: '#6872D9',
-                        }
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        
-        .cropper-view-box { outline: 2px solid #5E6AD2; }
-        .cropper-line, .cropper-point { background-color: #5E6AD2; }
-
-        .passport-overlay {
-            position: absolute; pointer-events: none;
-            border: 2px dashed rgba(94, 106, 210, 0.4);
-            border-radius: 50% / 50%;
-            width: 55%; height: 60%;
-            top: 15%; left: 22.5%; display: none; z-index: 10;
-            backdrop-filter: blur(1px);
-        }
-        .passport-overlay::after {
-            content: "Align eyes & mouth here";
-            position: absolute; bottom: -30px; left: 50%;
-            transform: translateX(-50%);
-            background: #0a0a0c; color: #EDEDEF;
-            font-size: 11px; padding: 4px 10px; border-radius: 6px; 
-            white-space: nowrap; border: 1px solid rgba(255,255,255,0.08);
-        }
-        .show-overlay .passport-overlay { display: block; }
-
-        @media print {
-            body > *:not(#printArea) { visibility: hidden !important; }
-            #printArea {
-                visibility: visible !important;
-                position: fixed; left: 0; top: 0;
-                width: 210mm; min-height: 297mm;
-                padding: 20mm; background: white;
-                display: grid !important;
-                grid-template-columns: repeat(4, 35mm);
-                gap: 10mm; align-content: start;
-            }
-            .print-photo { width: 35mm; height: 45mm; border: 1px solid #ddd; object-fit: cover; display: block !important; }
-        }
+        * { -webkit-user-select: none; user-select: none; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); } 50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.8); } }
+        @keyframes pulse-hand { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        .pulse-glow { animation: pulse-glow 2s infinite; }
+        .pulse-hand { animation: pulse-hand 0.6s infinite; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .dark .glass { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-text { background: linear-gradient(135deg, #0052cc 0%, #0066ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .video-placeholder { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .whiteboard-canvas { touch-action: none; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .status-online { background: #10b981; color: white; }
+        .status-offline { background: #6b7280; color: white; }
+        .permission-granted { background: #10b981; color: white; }
+        .permission-denied { background: #ef4444; color: white; }
     </style>
 </head>
-<body class="bg-space-base text-[#EDEDEF] antialiased selection:bg-brand-accent/30 relative min-h-screen overflow-x-hidden">
-
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-brand-accent/10 blur-[120px] rounded-full pointer-events-none z-0 animate-pulse-slow"></div>
-    <div class="absolute top-[300px] right-10 w-[300px] h-[300px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none z-0"></div>
-
-    <header class="border-b border-white/[0.06] bg-space-base/80 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] flex items-center justify-center">
-                    <div class="w-2 h-2 rounded-full bg-brand-accent"></div>
-                </div>
-                <div class="flex flex-col">
-                    <span class="text-sm font-semibold tracking-tight text-white">Aura Forge</span>
-                    <span class="text-[9px] font-mono tracking-widest text-[#8A8F98] uppercase">Media Lab</span>
-                </div>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">CL</div>
+                <span class="font-bold text-lg hidden sm:inline gradient-text">ClassRoom Live</span>
+                <span id="roleIndicator" class="ml-2 text-xs px-2 py-1 bg-blue-500 text-white rounded-full hidden">Student</span>
             </div>
-            <div class="text-[10px] font-mono tracking-wider text-[#8A8F98] bg-white/[0.02] border border-white/[0.06] px-3 py-1.5 rounded-lg flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                Status: Core Active
+            <div class="flex items-center gap-4">
+                <button id="themeToggle" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+                </button>
+                <button id="logoutBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition text-sm font-medium">Logout</button>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <main class="max-w-6xl mx-auto px-6 py-12 relative z-10">
-        <div class="bg-white/[0.02] border border-white/[0.06] p-1 rounded-xl max-w-sm mx-auto mb-12 flex gap-1">
-            <button id="tabPhoto" class="flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] text-[#EDEDEF] cursor-pointer transition-all">👤 Passport Photo</button>
-            <button id="tabPdf" class="flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] cursor-pointer transition-all">📄 PDF Reducer</button>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div class="lg:col-span-4 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] space-y-6">
-                <div class="space-y-3">
-                    <h2 id="sourceTitle" class="text-xs font-mono uppercase tracking-widest text-[#8A8F98]">1. Select File Source</h2>
-                    <div id="dropZone" class="flex flex-col items-center justify-center w-full h-40 border border-white/10 border-dashed rounded-xl cursor-pointer bg-space-deep/60 hover:border-brand-accent/50 transition-all relative group overflow-hidden">
-                        <svg class="w-7 h-7 mb-3 text-[#8A8F98]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                        <p id="dropZoneText" class="text-xs text-[#8A8F98] mb-2">Drop your file here or browse</p>
-                        <span class="text-[11px] bg-white/[0.06] text-[#EDEDEF] border border-white/10 px-3 py-1 rounded-md font-medium">Choose File</span>
-                        <input id="fileInput" type="file" accept="image/*" class="hidden" />
+    <!-- Main Container -->
+    <div class="pt-16">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+            <div class="w-full max-w-md">
+                <div class="glass rounded-2xl p-8 shadow-2xl">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4">CL</div>
+                        <h1 class="text-3xl font-bold gradient-text">ClassRoom Live</h1>
+                        <p class="text-gray-600 dark:text-gray-400 mt-2">Online Classroom Platform</p>
                     </div>
-                    <p id="fileError" class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg hidden"></p>
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Full Name</label>
+                            <input type="text" id="nameInput" placeholder="Enter your name" class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Email</label>
+                            <input type="email" id="emailInput" placeholder="your@email.com" class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Role</label>
+                            <select id="roleSelect" class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-2 rounded-lg transition transform hover:scale-105">Sign In</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboardScreen" class="hidden min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <!-- Welcome Section -->
+                <div class="mb-8 animate-fade-in">
+                    <h2 class="text-4xl font-bold mb-2">Welcome, <span id="userName" class="gradient-text">User</span>!</h2>
+                    <p class="text-gray-600 dark:text-gray-400" id="welcomeText">Join a classroom session to start learning</p>
                 </div>
 
-                <div id="cameraSection">
-                    <button id="startCamBtn" class="w-full flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-[#EDEDEF] font-medium py-2.5 px-4 rounded-xl text-xs transition-all cursor-pointer">
-                        <span id="camBtnText">📷 Use Live Camera</span>
+                <!-- Teacher Actions -->
+                <div id="teacherActions" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <button id="createSessionBtn" class="glass rounded-2xl p-8 cursor-pointer hover:shadow-lg transition transform hover:scale-105 text-left">
+                        <div class="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center text-white mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Create Session</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Start a new classroom</p>
                     </button>
                 </div>
 
-                <div id="configSection" class="space-y-4">
-                    <hr class="border-white/[0.06]">
-                    <h2 id="configTitle" class="text-xs font-mono uppercase tracking-widest text-[#8A8F98]">2. Optimization Settings</h2>
-                    <div class="space-y-2 bg-space-deep/40 p-3.5 rounded-xl border border-white/[0.04]">
-                        <div class="flex justify-between text-xs">
-                            <span id="targetLabelPrefix" class="text-[#8A8F98]">Target Size Limit</span>
-                            <span id="sizeLabel" class="text-brand-accent font-mono font-semibold">50 KB</span>
-                        </div>
-                        <input id="sizeSlider" type="range" min="5" max="150" value="50" step="1" class="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-accent">
-                    </div>
-                </div>
-
-                <button id="processBtn" disabled class="w-full bg-brand-accent hover:bg-brand-bright text-white font-medium py-3 px-4 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer flex justify-center items-center gap-2.5 text-xs tracking-wide uppercase font-mono">
-                    <span id="btnText">Run Process Engine</span>
-                    <div id="loader" class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
-                </button>
-            </div>
-
-            <div class="lg:col-span-8 space-y-6">
-                <div class="bg-gradient-to-b from-white/[0.03] to-white/[0.01] p-6 rounded-2xl border border-white/[0.06] flex flex-col items-center justify-center min-h-[440px] relative">
-                    <h3 id="studioTitle" class="text-[10px] font-mono text-[#8A8F98] mb-6 tracking-widest uppercase bg-white/[0.04] px-2.5 py-1 rounded-md">Engine Studio Monitor</h3>
-
-                    <div id="studioWrapper" class="w-full min-h-[320px] bg-space-deep/80 rounded-xl flex items-center justify-center border border-white/[0.06] relative p-4">
-                        <p id="placeholderText" class="text-xs text-[#8A8F98] text-center max-w-sm font-mono">[ System Ready — Please upload a file or switch on live feed ]</p>
-                        
-                        <video id="videoFeed" autoplay playsinline class="w-full h-auto hidden max-h-[350px] rounded-lg bg-black object-cover"></video>
-                        <button id="captureBtn" class="absolute bottom-6 bg-red-600 hover:bg-red-700 text-white text-xs px-6 py-2.5 rounded-full font-mono hidden z-30">📸 SNAP CAPTURE</button>
-
-                        <div id="cropperContainer" class="max-w-full max-h-[350px] relative hidden">
-                            <img id="sourceImage" class="max-w-full max-h-[320px]" alt="Source">
-                            <div class="passport-overlay"></div>
-                        </div>
-
-                        <div id="pdfInfoView" class="hidden text-center space-y-4">
-                            <div class="w-16 h-16 mx-auto bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-400">
-                                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/></svg>
-                            </div>
-                            <div>
-                                <p id="pdfName" class="font-medium text-sm text-[#EDEDEF] truncate max-w-xs mx-auto"></p>
-                                <p id="pdfSize" class="text-xs text-[#8A8F98] font-mono mt-1"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="resultCard" class="bg-gradient-to-r from-emerald-500/5 to-transparent p-6 rounded-2xl border border-emerald-500/20 hidden">
-                    <h3 id="resultStatusText" class="text-sm font-semibold mb-6 text-emerald-400">✨ Pipeline Success: File processed</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
-                        <div class="flex justify-center sm:col-span-4">
-                            <div class="border border-white/[0.08] p-2.5 bg-space-deep rounded-xl">
-                                <img id="outputImage" class="w-[130px] h-[165px] object-contain rounded-lg hidden" alt="Output Preview">
-                                <div id="pdfOutputIcon" class="w-[130px] h-[165px] flex flex-col items-center justify-center bg-red-500/5 border border-red-500/10 rounded-lg hidden">
-                                    <svg class="w-10 h-10 text-red-500/80" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6l-4-4H9z"/></svg>
-                                    <span class="text-[9px] font-mono tracking-wider font-bold mt-3 text-red-400 uppercase">REDUCED PDF</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="sm:col-span-8 space-y-4 text-center sm:text-left">
-                            <p class="text-xs font-mono text-[#8A8F98]">Output Size: <span id="finalSize" class="font-bold text-emerald-400">0 KB</span></p>
-                            <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
-                                <a id="downloadBtn" class="bg-brand-accent hover:bg-brand-bright text-white font-medium py-2 px-4 rounded-lg text-xs transition-all cursor-pointer">📥 Download File</a>
-                                <button id="convertToPdfBtn" class="bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.1] py-2 px-4 rounded-lg text-xs hidden">📄 Print Sheet (A4)</button>
-                            </div>
-                        </div>
+                <!-- Sessions List -->
+                <div class="glass rounded-2xl p-8">
+                    <h3 class="text-2xl font-bold mb-6">Available Sessions</h3>
+                    <div id="sessionsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="text-center py-12 text-gray-500 dark:text-gray-400 col-span-full">No sessions available</div>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
 
-    <div id="printArea" style="visibility:hidden; position:absolute;"></div>
+        <!-- Create Session Modal -->
+        <div id="createSessionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="glass rounded-2xl p-8 w-full max-w-md animate-fade-in">
+                <h2 class="text-2xl font-bold mb-6">Create New Session</h2>
+                <form id="createSessionForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Session Title</label>
+                        <input type="text" id="sessionTitle" placeholder="Math Class 101" class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Description</label>
+                        <textarea id="sessionDesc" placeholder="Add description..." class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows="3"></textarea>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="button" id="closeCreateModal" class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg transition">Cancel</button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Join Session Modal -->
+        <div id="joinSessionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="glass rounded-2xl p-8 w-full max-w-md animate-fade-in">
+                <h2 class="text-2xl font-bold mb-6">Join Classroom</h2>
+                <form id="joinSessionForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Room Code</label>
+                        <input type="text" id="roomCode" placeholder="Enter 8-character code" maxlength="8" class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase text-center text-lg tracking-widest" required>
+                    </div>
+                    <div class="flex gap-4">
+                        <button type="button" id="closeJoinModal" class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg transition">Cancel</button>
+                        <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Join</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Classroom Screen -->
+        <div id="classroomScreen" class="hidden min-h-screen bg-gray-900">
+            <div class="flex h-screen flex-col md:flex-row">
+                <!-- Main Video Area -->
+                <div class="flex-1 flex flex-col">
+                    <!-- Header -->
+                    <div class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                            <h1 id="classroomTitle" class="text-xl font-bold text-white">Classroom Session</h1>
+                            <p id="roomCodeDisplay" class="text-sm text-gray-400">Room: XXXXXXXX</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button id="toggleVideo" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition text-sm">Video</button>
+                            <button id="toggleAudio" class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm">Audio</button>
+                            <button id="raiseHandBtn" class="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition text-sm font-bold hidden">✋ Hand</button>
+                            <button id="muteAllBtn" class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition text-sm font-bold hidden">MUTE ALL</button>
+                            <button id="exitClassroom" class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition text-sm">Exit</button>
+                        </div>
+                    </div>
+
+                    <!-- Video Grid -->
+                    <div class="flex-1 overflow-auto p-4 bg-gray-900">
+                        <div id="videoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+                            <!-- Videos will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="w-full md:w-80 bg-gray-800 border-t md:border-t-0 md:border-l border-gray-700 flex flex-col">
+                    <!-- Tabs -->
+                    <div class="flex border-b border-gray-700 overflow-x-auto">
+                        <button id="chatTab" class="flex-1 px-4 py-3 bg-gray-700 text-white font-medium border-b-2 border-blue-500 text-sm whitespace-nowrap">Chat</button>
+                        <button id="participantsTab" class="flex-1 px-4 py-3 text-gray-400 hover:text-white text-sm whitespace-nowrap">People</button>
+                        <button id="controlsTab" class="flex-1 px-4 py-3 text-gray-400 hover:text-white text-sm whitespace-nowrap hidden">Controls</button>
+                    </div>
+
+                    <!-- Chat Panel -->
+                    <div id="chatPanel" class="flex-1 flex flex-col overflow-hidden">
+                        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+                        <div class="p-4 border-t border-gray-700">
+                            <form id="chatForm" class="flex gap-2">
+                                <input type="text" id="chatInput" placeholder="Type message..." class="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required>
+                                <button type="submit" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition text-sm">Send</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Participants Panel -->
+                    <div id="participantsPanel" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div id="participantsList" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+                        <div class="p-4 border-t border-gray-700 space-y-2">
+                            <button id="submitQuestionBtn" class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition text-sm">Ask Question</button>
+                            <button id="raiseHandBtnAlt" class="w-full px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition text-sm font-bold hidden">✋ Raise Hand</button>
+                        </div>
+                    </div>
+
+                    <!-- Controls Panel (Teacher) -->
+                    <div id="controlsPanel" class="hidden flex-1 flex flex-col overflow-hidden p-4 space-y-4">
+                        <div class="glass rounded-lg p-4">
+                            <h4 class="font-bold mb-3 text-white text-sm">Classroom Controls</h4>
+                            <button id="muteAllStudents" class="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition mb-2 font-bold text-sm">Mute All</button>
+                            <button id="unmuteAllStudents" class="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition text-sm">Unmute All</button>
+                        </div>
+
+                        <div class="glass rounded-lg p-4">
+                            <h4 class="font-bold mb-3 text-white text-sm">Raised Hands</h4>
+                            <div id="raisedHandsList" class="space-y-2 max-h-40 overflow-y-auto text-sm">
+                                <p class="text-gray-400">No raised hands</p>
+                            </div>
+                        </div>
+
+                        <div class="glass rounded-lg p-4">
+                            <h4 class="font-bold mb-3 text-white text-sm">Questions</h4>
+                            <div id="questionsList" class="space-y-2 max-h-40 overflow-y-auto text-sm">
+                                <p class="text-gray-400">No questions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Modal -->
+            <div id="questionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div class="glass rounded-2xl p-8 w-full max-w-md animate-fade-in">
+                    <h2 class="text-2xl font-bold mb-6">Ask a Question</h2>
+                    <form id="questionForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Your Question</label>
+                            <textarea id="questionInput" placeholder="Type your question here..." class="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" rows="4" required></textarea>
+                        </div>
+                        <div class="flex gap-4">
+                            <button type="button" id="closeQuestionModal" class="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg transition">Cancel</button>
+                            <button type="submit" class="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // DOM Hooks
-        const tabPhoto = document.getElementById('tabPhoto');
-        const tabPdf = document.getElementById('tabPdf');
-        const dropZone = document.getElementById('dropZone');
-        const dropZoneText = document.getElementById('dropZoneText');
-        const fileInput = document.getElementById('fileInput');
-        const fileError = document.getElementById('fileError');
-        const sourceImage = document.getElementById('sourceImage');
-        const placeholderText = document.getElementById('placeholderText');
-        const sizeSlider = document.getElementById('sizeSlider');
-        const sizeLabel = document.getElementById('sizeLabel');
-        const processBtn = document.getElementById('processBtn');
-        const btnText = document.getElementById('btnText');
-        const loader = document.getElementById('loader');
-        const outputImage = document.getElementById('outputImage');
-        const pdfOutputIcon = document.getElementById('pdfOutputIcon');
-        const resultCard = document.getElementById('resultCard');
-        const finalSize = document.getElementById('finalSize');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const convertToPdfBtn = document.getElementById('convertToPdfBtn');
-        const cropperContainer = document.getElementById('cropperContainer');
-        const startCamBtn = document.getElementById('startCamBtn');
-        const camBtnText = document.getElementById('camBtnText');
-        const videoFeed = document.getElementById('videoFeed');
-        const captureBtn = document.getElementById('captureBtn');
-        const pdfInfoView = document.getElementById('pdfInfoView');
-        const pdfName = document.getElementById('pdfName');
-        const pdfSize = document.getElementById('pdfSize');
-        const sourceTitle = document.getElementById('sourceTitle');
-        const cameraSection = document.getElementById('cameraSection');
-        const configTitle = document.getElementById('configTitle');
-        const targetLabelPrefix = document.getElementById('targetLabelPrefix');
-        const studioTitle = document.getElementById('studioTitle');
-        const printArea = document.getElementById('printArea');
+        // ==================== APP STATE ====================
+        const appState = {
+            user: null,
+            currentSession: null,
+            sessions: [],
+            messages: [],
+            participants: [],
+            isDarkMode: localStorage.getItem('darkMode') === 'true',
+            isVideoOn: true,
+            isAudioOn: true,
+            handRaised: false,
+            sessionStartTime: null,
+            allMuted: false
+        };
 
-        let cropper = null;
-        let currentMode = 'photo';
-        let rawPdfBuffer = null;
-        let localStream = null;
-        let generatedBase64 = null;
-        let currentBlobUrl = null;
-
-        // Slider Event Tracker
-        sizeSlider.addEventListener('input', e => {
-            sizeLabel.textContent = e.target.value + ' KB';
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            setupEventListeners();
+            loadSessions();
         });
 
-        // Toggle Tabs
-        tabPhoto.addEventListener('click', () => {
-            if (currentMode === 'photo') return;
-            currentMode = 'photo';
-            toggleTabUI(tabPhoto, tabPdf);
-            setupPhotoUI();
+        // ==================== THEME ====================
+        function initTheme() {
+            if (appState.isDarkMode) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            appState.isDarkMode = !appState.isDarkMode;
+            localStorage.setItem('darkMode', appState.isDarkMode);
+            document.documentElement.classList.toggle('dark');
         });
 
-        tabPdf.addEventListener('click', () => {
-            if (currentMode === 'pdf') return;
-            currentMode = 'pdf';
-            toggleTabUI(tabPdf, tabPhoto);
-            setupPdfUI();
-        });
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // Login
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
 
-        function toggleTabUI(active, inactive) {
-            active.className = "flex-1 text-center py-2 text-xs font-medium rounded-lg bg-white/[0.08] border border-white/[0.08] text-[#EDEDEF] cursor-pointer transition-all";
-            inactive.className = "flex-1 text-center py-2 text-xs font-medium rounded-lg text-[#8A8F98] hover:text-[#EDEDEF] cursor-pointer transition-all";
+            // Dashboard
+            document.getElementById('createSessionBtn').addEventListener('click', openCreateModal);
+            document.getElementById('closeCreateModal').addEventListener('click', closeCreateModal);
+            document.getElementById('createSessionForm').addEventListener('submit', handleCreateSession);
+            document.getElementById('closeJoinModal').addEventListener('click', closeJoinModal);
+            document.getElementById('joinSessionForm').addEventListener('submit', handleJoinSession);
+
+            // Classroom
+            document.getElementById('exitClassroom').addEventListener('click', exitClassroom);
+            document.getElementById('toggleVideo').addEventListener('click', toggleVideo);
+            document.getElementById('toggleAudio').addEventListener('click', toggleAudio);
+            document.getElementById('raiseHandBtn').addEventListener('click', toggleRaiseHand);
+            document.getElementById('raiseHandBtnAlt').addEventListener('click', toggleRaiseHand);
+            document.getElementById('muteAllBtn').addEventListener('click', muteAllStudents);
+            document.getElementById('muteAllStudents').addEventListener('click', muteAllStudents);
+            document.getElementById('unmuteAllStudents').addEventListener('click', unmuteAllStudents);
+            document.getElementById('chatForm').addEventListener('submit', handleSendMessage);
+            document.getElementById('submitQuestionBtn').addEventListener('click', openQuestionModal);
+            document.getElementById('closeQuestionModal').addEventListener('click', closeQuestionModal);
+            document.getElementById('questionForm').addEventListener('submit', handleSubmitQuestion);
+
+            // Tabs
+            document.getElementById('chatTab').addEventListener('click', showChatPanel);
+            document.getElementById('participantsTab').addEventListener('click', showParticipantsPanel);
+            document.getElementById('controlsTab').addEventListener('click', showControlsPanel);
         }
 
-        function setupPhotoUI() {
-            sourceTitle.textContent = "1. Select File Source";
-            dropZoneText.textContent = "Drop your file here or browse";
-            fileInput.accept = "image/*";
-            cameraSection.classList.remove('hidden');
-            configTitle.textContent = "2. Optimization Settings";
-            targetLabelPrefix.textContent = "Target Size Limit";
-            studioTitle.textContent = "Engine Studio Monitor";
-            stopCamera();
-            resetEditor();
-        }
-
-        function setupPdfUI() {
-            sourceTitle.textContent = "1. Upload Target PDF";
-            dropZoneText.textContent = "Drop PDF document here or browse";
-            fileInput.accept = "application/pdf";
-            cameraSection.classList.add('hidden');
-            configTitle.textContent = "2. Optimization Matrix";
-            targetLabelPrefix.textContent = "Compression Level";
-            studioTitle.textContent = "PDF Compression Monitor";
-            stopCamera();
-            resetEditor();
-        }
-
-        // Dropzone & File Handling
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', e => e.preventDefault());
-        dropZone.addEventListener('drop', e => {
+        // ==================== LOGIN ====================
+        function handleLogin(e) {
             e.preventDefault();
-            if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-        });
-        fileInput.addEventListener('change', e => {
-            if(e.target.files.length) handleFile(e.target.files[0]);
-        });
+            const name = document.getElementById('nameInput').value;
+            const email = document.getElementById('emailInput').value;
+            const role = document.getElementById('roleSelect').value;
 
-        function handleFile(file) {
-            if (currentMode === 'photo' && file.type.startsWith('image/')) {
-                fileError.classList.add('hidden');
-                const reader = new FileReader();
-                reader.onload = e => initCropper(e.target.result);
-                reader.readAsDataURL(file);
-            } else if (currentMode === 'pdf' && (file.type === 'application/pdf' || file.name.endsWith('.pdf'))) {
-                fileError.classList.add('hidden');
-                resetEditor();
-                placeholderText.classList.add('hidden');
-                pdfName.textContent = file.name;
-                pdfSize.textContent = "Original Size: " + (file.size / 1024).toFixed(1) + " KB";
-                pdfInfoView.classList.remove('hidden');
-                processBtn.removeAttribute('disabled');
+            appState.user = { name, email, role, id: Math.random().toString(36).substr(2, 9) };
+            localStorage.setItem('user', JSON.stringify(appState.user));
 
-                const reader = new FileReader();
-                reader.onload = e => { rawPdfBuffer = e.target.result; };
-                reader.readAsArrayBuffer(file);
-            } else {
-                fileError.textContent = "Invalid file type matching current tab selection!";
-                fileError.classList.remove('hidden');
+            document.getElementById('userName').textContent = name;
+            document.getElementById('roleIndicator').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+            document.getElementById('roleIndicator').classList.remove('hidden');
+
+            showScreen('dashboard');
+        }
+
+        function handleLogout() {
+            appState.user = null;
+            appState.currentSession = null;
+            localStorage.removeItem('user');
+            showScreen('login');
+        }
+
+        // ==================== SCREEN NAVIGATION ====================
+        function showScreen(screen) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+            document.getElementById('classroomScreen').classList.add('hidden');
+
+            if (screen === 'login') {
+                document.getElementById('loginScreen').classList.remove('hidden');
+            } else if (screen === 'dashboard') {
+                document.getElementById('dashboardScreen').classList.remove('hidden');
+                renderDashboard();
+            } else if (screen === 'classroom') {
+                document.getElementById('classroomScreen').classList.remove('hidden');
+                appState.sessionStartTime = new Date();
+                renderClassroom();
+                startSessionTimer();
             }
         }
 
-        function initCropper(imgSrc) {
-            resetEditor();
-            placeholderText.classList.add('hidden');
-            cropperContainer.classList.remove('hidden');
-            cropperContainer.classList.add('show-overlay');
-            sourceImage.src = imgSrc;
-            processBtn.removeAttribute('disabled');
+        // ==================== DASHBOARD ====================
+        function renderDashboard() {
+            const isTeacher = appState.user?.role === 'teacher';
+            
+            document.getElementById('teacherActions').classList.toggle('hidden', !isTeacher);
+            document.getElementById('welcomeText').textContent = isTeacher ? 
+                'Create and manage your classroom sessions' : 
+                'Join a classroom session to start learning';
 
-            cropper = new Cropper(sourceImage, {
-                aspectRatio: 3.5 / 4.5,
-                viewMode: 1,
-                autoCropArea: 0.9,
-                background: false
+            const sessionsList = document.getElementById('sessionsList');
+            if (appState.sessions.length === 0) {
+                sessionsList.innerHTML = '<div class="text-center py-12 text-gray-500 dark:text-gray-400 col-span-full">No sessions available</div>';
+                return;
+            }
+
+            sessionsList.innerHTML = appState.sessions.map(session => `
+                <div class="glass rounded-xl p-4 cursor-pointer hover:shadow-lg transition">
+                    <h4 class="font-bold text-lg mb-2">${session.title}</h4>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">${session.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs bg-blue-500 text-white px-2 py-1 rounded">${session.roomCode}</span>
+                        <button onclick="joinSessionById('${session.id}')" class="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition">Join</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==================== SESSION MANAGEMENT ====================
+        function generateRoomCode() {
+            return Math.random().toString(36).substr(2, 8).toUpperCase();
+        }
+
+        function handleCreateSession(e) {
+            e.preventDefault();
+            const title = document.getElementById('sessionTitle').value;
+            const description = document.getElementById('sessionDesc').value;
+
+            const session = {
+                id: Math.random().toString(36).substr(2, 9),
+                title,
+                description,
+                roomCode: generateRoomCode(),
+                teacher: appState.user,
+                students: [],
+                createdAt: new Date(),
+                isActive: true,
+                messages: [],
+                questions: [],
+                raisedHands: []
+            };
+
+            appState.sessions.push(session);
+            localStorage.setItem('sessions', JSON.stringify(appState.sessions));
+
+            closeCreateModal();
+            renderDashboard();
+            showNotification(`Session "${title}" created! Room code: ${session.roomCode}`);
+        }
+
+        function handleJoinSession(e) {
+            e.preventDefault();
+            const roomCode = document.getElementById('roomCode').value.toUpperCase();
+
+            const session = appState.sessions.find(s => s.roomCode === roomCode);
+            if (!session) {
+                showNotification('Session not found!', 'error');
+                return;
+            }
+
+            if (!session.students) session.students = [];
+            if (!session.students.find(p => p.id === appState.user.id)) {
+                session.students.push(appState.user);
+            }
+
+            appState.currentSession = session;
+            appState.messages = session.messages || [];
+            appState.participants = [session.teacher, ...session.students];
+
+            closeJoinModal();
+            showScreen('classroom');
+        }
+
+        function joinSessionById(sessionId) {
+            const session = appState.sessions.find(s => s.id === sessionId);
+            if (session) {
+                if (!session.students) session.students = [];
+                if (!session.students.find(p => p.id === appState.user.id)) {
+                    session.students.push(appState.user);
+                }
+                appState.currentSession = session;
+                appState.messages = session.messages || [];
+                appState.participants = [session.teacher, ...session.students];
+                showScreen('classroom');
+            }
+        }
+
+        function exitClassroom() {
+            appState.currentSession = null;
+            appState.handRaised = false;
+            appState.allMuted = false;
+            showScreen('dashboard');
+        }
+
+        function loadSessions() {
+            const saved = localStorage.getItem('sessions');
+            if (saved) {
+                appState.sessions = JSON.parse(saved);
+            }
+            const user = localStorage.getItem('user');
+            if (user) {
+                appState.user = JSON.parse(user);
+                document.getElementById('userName').textContent = appState.user.name;
+                document.getElementById('roleIndicator').textContent = appState.user.role.charAt(0).toUpperCase() + appState.user.role.slice(1);
+                document.getElementById('roleIndicator').classList.remove('hidden');
+                showScreen('dashboard');
+            }
+        }
+
+        // ==================== CLASSROOM ====================
+        function renderClassroom() {
+            if (!appState.currentSession) return;
+
+            const isTeacher = appState.user?.role === 'teacher';
+
+            document.getElementById('classroomTitle').textContent = appState.currentSession.title;
+            document.getElementById('roomCodeDisplay').textContent = `Room: ${appState.currentSession.roomCode}`;
+
+            // Show/hide role-specific buttons
+            document.getElementById('raiseHandBtn').classList.toggle('hidden', isTeacher);
+            document.getElementById('raiseHandBtnAlt').classList.toggle('hidden', isTeacher);
+            document.getElementById('muteAllBtn').classList.toggle('hidden', !isTeacher);
+            document.getElementById('controlsTab').classList.toggle('hidden', !isTeacher);
+            document.getElementById('submitQuestionBtn').classList.toggle('hidden', isTeacher);
+
+            renderVideoGrid();
+            renderChatMessages();
+            renderParticipants();
+            if (isTeacher) {
+                renderRaisedHands();
+                renderQuestionsPanel();
+            }
+        }
+
+        function renderVideoGrid() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = appState.participants.map((p, i) => `
+                <div class="video-placeholder rounded-lg overflow-hidden shadow-lg relative">
+                    <div class="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-3xl font-bold text-white">${p.name.charAt(0)}</span>
+                            </div>
+                            <p class="text-white font-semibold text-sm">${p.name}</p>
+                            <p class="text-white text-xs opacity-75">${p.role === 'teacher' ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}</p>
+                        </div>
+                    </div>
+                    <div class="absolute top-2 right-2 flex gap-2">
+                        <span class="bg-green-500 text-white text-xs px-2 py-1 rounded">🎤</span>
+                        <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded">📹</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = appState.messages.map(msg => `
+                <div class="animate-fade-in">
+                    <p class="text-sm font-semibold text-blue-400">${msg.sender}</p>
+                    <p class="text-sm text-gray-300 mt-1">${msg.text}</p>
+                    <p class="text-xs text-gray-500 mt-1">${new Date(msg.timestamp).toLocaleTimeString()}</p>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderParticipants() {
+            const list = document.getElementById('participantsList');
+            list.innerHTML = appState.participants.map(p => `
+                <div class="glass rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold text-sm">${p.name}</p>
+                        <p class="text-xs text-gray-400">${p.role === 'teacher' ? '👨‍🏫 Teacher' : '👨‍🎓 Student'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRaisedHands() {
+            const list = document.getElementById('raisedHandsList');
+            const raised = appState.currentSession.raisedHands || [];
+            if (raised.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-sm">No raised hands</p>';
+                return;
+            }
+            list.innerHTML = raised.map(studentId => {
+                const student = appState.participants.find(s => s.id === studentId);
+                return `
+                    <div class="flex justify-between items-center text-sm">
+                        <span>${student?.name || 'Unknown'}</span>
+                        <button onclick="lowerHand('${studentId}')" class="text-red-400 hover:text-red-300">Lower</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuestionsPanel() {
+            const list = document.getElementById('questionsList');
+            const questions = appState.currentSession.questions || [];
+            if (questions.length === 0) {
+                list.innerHTML = '<p class="text-gray-400 text-sm">No questions</p>';
+                return;
+            }
+            list.innerHTML = questions.map(q => `
+                <div class="text-sm border-l-2 border-blue-500 pl-2">
+                    <p class="font-semibold">${q.asker}</p>
+                    <p class="text-gray-300 text-xs mt-1">${q.text}</p>
+                </div>
+            `).join('');
+        }
+
+        // ==================== TEACHER CONTROLS ====================
+        function muteAllStudents() {
+            appState.allMuted = true;
+            appState.participants.forEach(p => {
+                if (p.role !== 'teacher') p.isMuted = true;
             });
+            document.getElementById('muteAllBtn').classList.add('pulse-glow');
+            showNotification('All students muted!');
         }
 
-        // Camera Management
-        startCamBtn.addEventListener('click', async () => {
-            if (localStream) { stopCamera(); return; }
-            resetEditor();
-            placeholderText.classList.add('hidden');
-            videoFeed.classList.remove('hidden');
-            captureBtn.classList.remove('hidden');
-            camBtnText.textContent = "⏳ Accessing Lens...";
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                videoFeed.srcObject = localStream;
-                camBtnText.textContent = "⏹ Stop Camera Feed";
-            } catch (err) {
-                alert("Camera modern hardware block detected.");
-                resetEditor();
-            }
-        });
-
-        captureBtn.addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = videoFeed.videoWidth;
-            canvas.height = videoFeed.videoHeight;
-            canvas.getContext('2d').drawImage(videoFeed, 0, 0);
-            stopCamera();
-            initCropper(canvas.toDataURL('image/jpeg'));
-        });
-
-        function stopCamera() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            videoFeed.classList.add('hidden');
-            captureBtn.classList.add('hidden');
-            camBtnText.textContent = "📷 Use Live Camera";
+        function unmuteAllStudents() {
+            appState.allMuted = false;
+            appState.participants.forEach(p => {
+                if (p.role !== 'teacher') p.isMuted = false;
+            });
+            document.getElementById('muteAllBtn').classList.remove('pulse-glow');
+            showNotification('All students unmuted!');
         }
 
-        function resetEditor() {
-            if (cropper) { cropper.destroy(); cropper = null; }
-            cropperContainer.classList.add('hidden');
-            pdfInfoView.classList.add('hidden');
-            placeholderText.classList.remove('hidden');
-            processBtn.setAttribute('disabled', 'true');
-            resultCard.classList.add('hidden');
+        function lowerHand(studentId) {
+            appState.currentSession.raisedHands = (appState.currentSession.raisedHands || []).filter(id => id !== studentId);
+            renderRaisedHands();
         }
 
-        // Process Module Execution
-        processBtn.addEventListener('click', async () => {
-            btnText.textContent = "Processing Core...";
-            loader.classList.remove('hidden');
-            processBtn.setAttribute('disabled', 'true');
-
-            if (currentMode === 'photo' && cropper) {
-                const canvas = cropper.getCroppedCanvas({ width: 413, height: 531 });
-                let quality = 0.9, target = parseInt(sizeSlider.value);
-                let dataUrl = canvas.toDataURL('image/jpeg', quality);
-                
-                // Compression Loop
-                while ((dataUrl.length * 0.75) / 1024 > target && quality > 0.1) {
-                    quality -= 0.05;
-                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // ==================== STUDENT FEATURES ====================
+        function toggleRaiseHand() {
+            appState.handRaised = !appState.handRaised;
+            const btns = [document.getElementById('raiseHandBtn'), document.getElementById('raiseHandBtnAlt')];
+            
+            if (appState.handRaised) {
+                if (!appState.currentSession.raisedHands) appState.currentSession.raisedHands = [];
+                if (!appState.currentSession.raisedHands.includes(appState.user.id)) {
+                    appState.currentSession.raisedHands.push(appState.user.id);
                 }
-                
-                generatedBase64 = dataUrl;
-                outputImage.src = dataUrl;
-                outputImage.classList.remove('hidden');
-                pdfOutputIcon.classList.add('hidden');
-                downloadBtn.href = dataUrl;
-                downloadBtn.download = "passport_photo.jpg";
-                convertToPdfBtn.classList.remove('hidden');
-                finalSize.textContent = ((dataUrl.length * 0.75) / 1024).toFixed(1) + " KB";
-                
-            } else if (currentMode === 'pdf' && rawPdfBuffer) {
-                try {
-                    const pdfDoc = await window.PDFLib.PDFDocument.load(rawPdfBuffer);
-                    const compressedBytes = await pdfDoc.save({ useObjectStreams: true });
-                    const blob = new Blob([compressedBytes], { type: 'application/pdf' });
-                    
-                    if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
-                    currentBlobUrl = URL.createObjectURL(blob);
-                    
-                    outputImage.classList.add('hidden');
-                    pdfOutputIcon.classList.remove('hidden');
-                    downloadBtn.href = currentBlobUrl;
-                    downloadBtn.download = "compressed.pdf";
-                    convertToPdfBtn.classList.add('hidden');
-                    finalSize.textContent = (compressedBytes.length / 1024).toFixed(1) + " KB";
-                } catch(e) {
-                    alert("PDF reduction error encountered.");
-                }
+                btns.forEach(btn => {
+                    btn.classList.add('pulse-hand', 'bg-yellow-600');
+                    btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                });
+                showNotification('Hand raised! Teacher will see your request');
+            } else {
+                appState.currentSession.raisedHands = (appState.currentSession.raisedHands || []).filter(id => id !== appState.user.id);
+                btns.forEach(btn => {
+                    btn.classList.remove('pulse-hand', 'bg-yellow-600');
+                    btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                });
+                showNotification('Hand lowered');
+            }
+        }
+
+        // ==================== CHAT ====================
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const text = document.getElementById('chatInput').value;
+            if (!text.trim()) return;
+
+            const message = {
+                sender: appState.user.name,
+                text,
+                timestamp: new Date(),
+                userId: appState.user.id
+            };
+
+            appState.messages.push(message);
+            if (appState.currentSession) {
+                appState.currentSession.messages = appState.messages;
             }
 
-            loader.classList.add('hidden');
-            btnText.textContent = "Run Process Engine";
-            processBtn.removeAttribute('disabled');
-            resultCard.classList.remove('hidden');
-        });
+            document.getElementById('chatInput').value = '';
+            renderChatMessages();
+        }
 
-        // A4 Print Generation Module
-        convertToPdfBtn.addEventListener('click', () => {
-            if (!generatedBase64) return;
-            printArea.innerHTML = '';
-            for(let i=0; i<8; i++){
-                const img = document.createElement('img');
-                img.src = generatedBase64;
-                img.className = 'print-photo';
-                printArea.appendChild(img);
+        // ==================== QUESTIONS ====================
+        function openQuestionModal() {
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
+
+        function closeQuestionModal() {
+            document.getElementById('questionModal').classList.add('hidden');
+            document.getElementById('questionForm').reset();
+        }
+
+        function handleSubmitQuestion(e) {
+            e.preventDefault();
+            const text = document.getElementById('questionInput').value;
+            if (!text.trim()) return;
+
+            const question = {
+                asker: appState.user.name,
+                text,
+                timestamp: new Date(),
+                userId: appState.user.id,
+                answered: false
+            };
+
+            if (appState.currentSession) {
+                if (!appState.currentSession.questions) appState.currentSession.questions = [];
+                appState.currentSession.questions.push(question);
             }
-            window.print();
+
+            document.getElementById('questionInput').value = '';
+            closeQuestionModal();
+            showNotification('Question submitted! Teacher will review it');
+        }
+
+        // ==================== PANELS ====================
+        function showChatPanel() {
+            document.getElementById('chatPanel').classList.remove('hidden');
+            document.getElementById('participantsPanel').classList.add('hidden');
+            document.getElementById('chatTab').classList.add('bg-gray-700');
+            document.getElementById('participantsTab').classList.remove('bg-gray-700');
+        }
+
+        function showParticipantsPanel() {
+            document.getElementById('chatPanel').classList.add('hidden');
+            document.getElementById('participantsPanel').classList.remove('hidden');
+            document.getElementById('chatTab').classList.remove('bg-gray-700');
+            document.getElementById('participantsTab').classList.add('bg-gray-700');
+        }
+
+        function showControlsPanel() {
+            document.getElementById('chatPanel').classList.add('hidden');
+            document.getElementById('participantsPanel').classList.add('hidden');
+            document.getElementById('controlsPanel').classList.remove('hidden');
+            document.getElementById('chatTab').classList.remove('bg-gray-700');
+            document.getElementById('participantsTab').classList.remove('bg-gray-700');
+            document.getElementById('controlsTab').classList.add('bg-gray-700');
+            renderRaisedHands();
+            renderQuestionsPanel();
+        }
+
+        // ==================== MEDIA CONTROLS ====================
+        function toggleVideo() {
+            appState.isVideoOn = !appState.isVideoOn;
+            document.getElementById('toggleVideo').classList.toggle('bg-blue-500', appState.isVideoOn);
+            document.getElementById('toggleVideo').classList.toggle('bg-gray-500', !appState.isVideoOn);
+            showNotification(appState.isVideoOn ? 'Your video ON' : 'Your video OFF');
+        }
+
+        function toggleAudio() {
+            appState.isAudioOn = !appState.isAudioOn;
+            document.getElementById('toggleAudio').classList.toggle('bg-green-500', appState.isAudioOn);
+            document.getElementById('toggleAudio').classList.toggle('bg-gray-500', !appState.isAudioOn);
+            showNotification(appState.isAudioOn ? 'Your audio ON' : 'Your audio OFF');
+        }
+
+        // ==================== MODALS ====================
+        function openCreateModal() {
+            document.getElementById('createSessionModal').classList.remove('hidden');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createSessionModal').classList.add('hidden');
+            document.getElementById('createSessionForm').reset();
+        }
+
+        // ==================== SESSION TIMER ====================
+        function startSessionTimer() {
+            setInterval(() => {
+                if (!appState.sessionStartTime) return;
+                const elapsed = Math.floor((new Date() - appState.sessionStartTime) / 1000);
+                const hours = Math.floor(elapsed / 3600);
+                const minutes = Math.floor((elapsed % 3600) / 60);
+                const seconds = elapsed % 60;
+            }, 1000);
+        }
+
+        // ==================== UTILITIES ====================
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-24 right-4 px-6 py-3 rounded-lg text-white font-medium animate-fade-in ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Close modals on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'createSessionModal') closeCreateModal();
+            if (e.target.id === 'joinSessionModal') closeJoinModal();
+            if (e.target.id === 'questionModal') closeQuestionModal();
         });
     </script>
 </body>
